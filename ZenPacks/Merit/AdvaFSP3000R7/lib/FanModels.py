@@ -8,4 +8,4 @@
 
 __doc__='Valid Fan component models'
 
-FanModels = [ 'FAN/9HU','FAN/PLUG-IN', 'FAN/Plug-In', 'FAN/1HU' ]
+FanModels = [ 'FAN/9HU','FAN/PLUG-IN', 'FAN/Plug-In', 'FAN/1HU', 'FTM-4' ]

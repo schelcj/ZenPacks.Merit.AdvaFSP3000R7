@@ -41,7 +41,7 @@ class FSP3000R7Optical100GigMib(SnmpPlugin):
         for snmpIndex in tabledata['entityFacilityTable']:
             entityFacilityAidString = tabledata['entityFacilityTable']\
                                           [snmpIndex]['entityFacilityAidString']
-            if re.match('OTL\-\d+\-\d+\-N\-\d$',entityFacilityAidString):
+            if re.match('OTL\-\d+\-\d+\-N\-\d$',entityFacilityAidString) or re.match('OTL-\d+-\d+-C\d-\d$',entityFacilityAidString) :
                 om = self.objectMap()
                 om.title = entityFacilityAidString
                 om.id = self.prepId(entityFacilityAidString)

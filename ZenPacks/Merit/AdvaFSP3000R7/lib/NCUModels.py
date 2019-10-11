@@ -8,4 +8,4 @@
 
 __doc__='Valid NCU component models'
 
-NCUModels = [ 'NCU-II', 'NCU-II-P', 'NCU' ]
+NCUModels = [ 'NCU-II', 'NCU-II-P', 'NCU','ECM-2' ]

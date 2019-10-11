@@ -57,7 +57,7 @@ class FSP3000R7ModuleMib(SnmpPlugin):
             inventoryUnitName = inventoryTable[entityIndex]['inventoryUnitName']
             if inventoryUnitName in FanorNCUorPSModels:
                 continue
-            if entityTable[entityIndex]['entityIndexAid'].startswith('MOD-'):
+            if entityTable[entityIndex]['entityIndexAid'].startswith('MOD-') or entityTable[entityIndex]['entityIndexAid'].startswith('MODC-'):
                 om = self.objectMap()
                 om.EntityIndex = int(entityIndex)
                 om.inventoryUnitName = inventoryUnitName

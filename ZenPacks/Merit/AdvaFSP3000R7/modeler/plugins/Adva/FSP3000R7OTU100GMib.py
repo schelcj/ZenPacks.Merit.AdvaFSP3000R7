@@ -43,8 +43,10 @@ class FSP3000R7OTU100GMib(SnmpPlugin):
                            '10TCC-PCTN-10G+100GC',
                            '10TCE-PCN-10G+100G',
                            '10TCE-PCN-10G+100G-GF',
+                           '10TCE-PCN-16GU+100G',
                            'WCC-PCTN-100GA',
-                           'WCC-PCTN-100GB']
+                           'WCC-PCTN-100GB',
+                           'MP-2B4CT']
 
         # SNMP table
         getdata, tabledata = results
