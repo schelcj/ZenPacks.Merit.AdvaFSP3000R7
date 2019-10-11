@@ -8,3 +8,7 @@ setuptools*
 *EGG-INFO*
 *dist
 .svn/
+
+.vscode/
+.vstags
+.code-workspace
