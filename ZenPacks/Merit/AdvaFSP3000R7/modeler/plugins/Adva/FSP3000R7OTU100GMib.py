@@ -19,6 +19,8 @@ from re import match
 from Products.DataCollector.plugins.CollectorPlugin import SnmpPlugin, GetTableMap, GetMap
 from Products.DataCollector.plugins.DataMaps import ObjectMap
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibPickle import getCache
+from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import AssignmentState
+from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import EquipmentState
 
 
 # Use SNMP data from Device Modeler in a cache file.  Can't be a PythonPlugin
@@ -72,41 +74,50 @@ class FSP3000R7OTU100GMib(SnmpPlugin):
             log.info('found 100G Muxponder OTU matching model %s' % bladeInv)
     
             # find ports from entityContainedIn for 100G OTU entityIndex
-            portEntityIndex,portEntityIndexAid = \
-                self.__findPort(log,bladeEntityIndex,entityTable)
-            if portEntityIndex is False:
+            ports = self.__findPorts(log,bladeEntityIndex,entityTable)
+
+            if not ports:
                 continue
 
-            om = self.objectMap()
-            om.EntityIndex = int(portEntityIndex)
-            om.inventoryUnitName = bladeInv
-            if 'interfaceConfigIdentifier' in entityTable[portEntityIndex]:
-                om.interfaceConfigId = \
-                   entityTable[portEntityIndex]['interfaceConfigIdentifier']
-            om.entityIndexAid=entityTable[portEntityIndex]['entityIndexAid']
-            om.entityAssignmentState = \
-                entityTable[portEntityIndex]['entityAssignmentState']
-            om.id = self.prepId(om.entityIndexAid)
-            om.title = om.entityIndexAid
-            om.snmpindex = int(portEntityIndex)
-            log.info('Found 100Gig Muxponder OTU at: %s inventoryUnitName: %s',
-                     om.entityIndexAid, om.inventoryUnitName)
+            for portEntityIndex, portEntityIndexAid in ports:
+                om = self.objectMap()
+                om.EntityIndex = int(portEntityIndex)
+                om.inventoryUnitName = bladeInv
+                if 'interfaceConfigIdentifier' in entityTable[portEntityIndex]:
+                    om.interfaceConfigId = entityTable[portEntityIndex]['interfaceConfigIdentifier']
+                om.entityIndexAid=entityTable[portEntityIndex]['entityIndexAid']
+                om.entityAssignmentState = entityTable[portEntityIndex]['entityAssignmentState']
+                om.id = self.prepId(om.entityIndexAid)
+                om.title = om.entityIndexAid
+                om.snmpindex = int(portEntityIndex)
+                log.info('Found 100Gig Muxponder OTU port at: %s inventoryUnitName: %s',
+                         om.entityIndexAid, om.inventoryUnitName)
 
-            rm.append(om)
+                rm.append(om)
 
         return rm
 
 
-    def __findPort(self,log,parentEntityIndex,entityTable):
+    def __findPorts(self, log, parentEntityIndex, entityTable):
+        """
+        Follow the entityContainedIn chain and collect components with
+        entityIndexAid like "CH-1-1-N*". If we see an entity that is either not
+        assigned or unequipped, don't go any deeper into that component chain.
+        """
+        ports = []
         parentEntityIndex = str(parentEntityIndex)
-        for entityIndex in entityTable:
-           entityContainedIn =str(entityTable[entityIndex]['entityContainedIn'])
-           if entityContainedIn == parentEntityIndex:
-               if match(r'CH\-\d+\-\d+\-N',
-                        entityTable[entityIndex]['entityIndexAid']):
-                   return entityIndex,entityTable[entityIndex]['entityIndexAid']
-               else:
-                   i,a = self.__findPort(log,entityIndex,entityTable)
-                   if i is not False:
-                       return i,a
-        return False, False
+        for entityIndex, entityAttrs in entityTable.items():
+            entityContainedIn = str(entityAttrs['entityContainedIn'])
+            if entityContainedIn == parentEntityIndex:
+                entity_is_not_assigned = entityAttrs['entityAssignmentState'] != AssignmentState.ASSIGNED
+                entity_is_unequipped = entityAttrs['entityEquipmentState'] == EquipmentState.UNEQUIPPED
+
+                if entity_is_unequipped or entity_is_not_assigned:
+                    continue
+
+                if (match(r'CH\-\d+\-\d+\-N', entityAttrs['entityIndexAid'])):
+                    ports.append((entityIndex, entityAttrs['entityIndexAid']))
+                else:
+                    ports.extend(self.__findPorts(log, entityIndex, entityTable))
+
+        return ports
