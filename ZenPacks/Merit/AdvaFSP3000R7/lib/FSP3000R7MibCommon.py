@@ -18,6 +18,8 @@ from Products.DataCollector.plugins.CollectorPlugin import SnmpPlugin, GetTableM
 from Products.DataCollector.plugins.DataMaps import ObjectMap
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7Channels import Channels
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibPickle import getCache
+from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import AssignmentState
+from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import EquipmentState
 
 
 # Use SNMP data from Device Modeler in a cache file.  Can't be a PythonPlugin
@@ -62,8 +64,8 @@ class FSP3000R7MibCommon(SnmpPlugin):
               and entityIndex in entityTable \
               and 'entityAssignmentState' in entityTable[entityIndex] \
               and 'entityEquipmentState' in entityTable[entityIndex] \
-              and entityTable[entityIndex]['entityAssignmentState'] == 1 \
-              and entityTable[entityIndex]['entityEquipmentState'] == 1:
+              and entityTable[entityIndex]['entityAssignmentState'] == AssignmentState.ASSIGNED \
+              and entityTable[entityIndex]['entityEquipmentState'] == EquipmentState.EQUIPPED:
                 # only add MOD name if power supply, fan or NCU
                 if self.__class__.__name__ in ['FSP3000R7PowerSupplyMib',
                                                'FSP3000R7FanMib',
@@ -84,6 +86,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
                   om.snmpindex = int(entityIndex)
                   log.info('Found component at: %s inventoryUnitName: %s',
                            modName, invName)
+
                   rm.append(om)
 
                 # Now find sub-organizers that respond to OPR
@@ -91,10 +94,28 @@ class FSP3000R7MibCommon(SnmpPlugin):
                     continue
                 for entityIndex in containsOPRModules[modName]:
                     # skip non-production components
-                    if not (entityIndex in entityTable
-                      and 'entityAssignmentState' in entityTable[entityIndex]
-                      and entityTable[entityIndex]['entityAssignmentState']==1):
+                    entity_assigned = (
+                        entityIndex in entityTable
+                        and entityTable[entityIndex].get('entityAssignmentState') == AssignmentState.ASSIGNED
+                    )
+
+                    # Sub-organizers with EquipmentState.UNDEFINED or no equipment state should be considered valid
+                    entity_equipped = (
+                        entityIndex in entityTable
+                        and entityTable[entityIndex].get('entityEquipmentState') in (
+                            None,
+                            EquipmentState.UNDEFINED,
+                            EquipmentState.EQUIPPED,
+                        )
+                    )
+
+                    if not (entity_assigned or entity_equipped):
+                        log.info('Skipping %s, assigned=%s, equipped=%s',
+                                 entityTable[entityIndex]['entityIndexAid'],
+                                 entity_assigned,
+                                 entity_equipped)
                         continue;
+
                     om = self.objectMap()
                     om.EntityIndex = int(entityIndex)
                     om.inventoryUnitName = invName
@@ -109,7 +130,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
                     om.title = om.entityIndexAid
                     om.snmpindex = int(entityIndex)
                     log.info('Found component at: %s inventoryUnitName: %s',
-                             om.entityIndexAid, om.inventoryUnitName)
+                             om.entityIndexAid, invName)
 
                     rm.append(om)
 
@@ -135,6 +156,6 @@ and 'VCH-1-7-N1' -> ' 1 7VCH N1'"""
         a = entityIndexAid.split('-',4)
         if len(a) < 3:
             return '000000000'
-        if entityIndexAid.startswith('MOD-') or entityIndexAid.startswith('FAN-') or entityIndexAid.startswith('MODC-') or entityIndexAid.startswith(FANC-)::
+        if entityIndexAid.startswith('MOD-') or entityIndexAid.startswith('FAN-') or entityIndexAid.startswith('MODC-') or entityIndexAid.startswith('FANC-'):
             return "%03s%03s%03s000" % (a[1],a[2],a[0])
         return "%03s%03s%03s%03s" % (a[1],a[2],a[0],a[3])
