@@ -40,7 +40,7 @@ class FSP3000R7ModuleMib(SnmpPlugin):
 
         inventoryTable = entityTable = opticalIfDiagTable = False
         containsModules = {}
-        gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
+        gotCache, inventoryTable, entityTable, opticalIfDiagTable, adminStateTable, \
             containsModules = getCache(device.id, self.name(), log)
         if not gotCache:
             log.debug('Could not get cache for %s' % self.name())
