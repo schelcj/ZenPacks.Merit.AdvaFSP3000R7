@@ -7,6 +7,7 @@ Look for modules that contain amplifier stages, transponder optics. etc.
 from Products.DataCollector.plugins.CollectorPlugin import SnmpPlugin, GetTableMap, GetMap
 from Products.DataCollector.plugins.DataMaps import ObjectMap
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7Channels import Channels
+from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibCommon import FSP3000R7MibCommon
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibPickle import getCache
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FanModels import FanModels
 from ZenPacks.Merit.AdvaFSP3000R7.lib.NCUModels import NCUModels
@@ -17,7 +18,7 @@ FanorNCUorPSModels = [item for sublist in \
                           [FanModels,NCUModels,PowerSupplyModels]
                               for item in sublist]
 
-class FSP3000R7ModuleMib(SnmpPlugin):
+class FSP3000R7ModuleMib(FSP3000R7MibCommon):
 
     modname = "ZenPacks.Merit.AdvaFSP3000R7.FSP3000R7Module"
     relname = "FSP3000R7Mod"
@@ -50,20 +51,25 @@ class FSP3000R7ModuleMib(SnmpPlugin):
         rm = self.relMap()
 
         # pick up MOD-* containers from entityTable
-        for entityIndex in entityTable:
+        for entityIndex, attributes in entityTable.items():
             # Power Supply, NCU and Fan models are already top level containers
-            if not (entityIndex in inventoryTable):
+            if entityIndex not in inventoryTable:
                 continue
             inventoryUnitName = inventoryTable[entityIndex]['inventoryUnitName']
             if inventoryUnitName in FanorNCUorPSModels:
                 continue
-            if entityTable[entityIndex]['entityIndexAid'].startswith('MOD-') or entityTable[entityIndex]['entityIndexAid'].startswith('MODC-'):
+
+            # Skip module if out of service
+            entityIndexAid = attributes['entityIndexAid']
+            if not self._entity_is_in_service(entityIndexAid, adminStateTable):
+                continue
+
+            if entityIndexAid.startswith('MOD-') or entityIndexAid.startswith('MODC-'):
                 om = self.objectMap()
                 om.EntityIndex = int(entityIndex)
                 om.inventoryUnitName = inventoryUnitName
-                om.entityIndexAid = entityTable[entityIndex]['entityIndexAid']
-                om.entityAssignmentState = \
-                    entityTable[entityIndex]['entityAssignmentState']
+                om.entityIndexAid = entityIndexAid
+                om.entityAssignmentState = attributes['entityAssignmentState']
                 om.interfaceConfigId     = ''
                 om.sortKey               = '000000000'
                 om.entityAssignmentState = 'Not set by modeler'
