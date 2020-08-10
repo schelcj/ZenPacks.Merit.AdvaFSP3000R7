@@ -18,6 +18,9 @@ from Products.DataCollector.plugins.CollectorPlugin import SnmpPlugin, GetTableM
 from Products.DataCollector.plugins.DataMaps import ObjectMap
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7Channels import Channels
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibPickle import getCache
+from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import AdminState
+from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import AssignmentState
+from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import EquipmentState
 
 
 # Use SNMP data from Device Modeler in a cache file.  Can't be a PythonPlugin
@@ -44,7 +47,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
 
         inventoryTable = entityTable = opticalIfDiagTable = False
         containsOPRModules = {}
-        gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
+        gotCache, inventoryTable, entityTable, opticalIfDiagTable, adminStateTable, \
             containsOPRModules = getCache(device.id, self.name(), log)
         if not gotCache:
             log.debug('Could not get cache for %s' % self.name())
@@ -62,8 +65,8 @@ class FSP3000R7MibCommon(SnmpPlugin):
               and entityIndex in entityTable \
               and 'entityAssignmentState' in entityTable[entityIndex] \
               and 'entityEquipmentState' in entityTable[entityIndex] \
-              and entityTable[entityIndex]['entityAssignmentState'] == 1 \
-              and entityTable[entityIndex]['entityEquipmentState'] == 1:
+              and entityTable[entityIndex]['entityAssignmentState'] == AssignmentState.ASSIGNED \
+              and entityTable[entityIndex]['entityEquipmentState'] == EquipmentState.EQUIPPED:
                 # only add MOD name if power supply, fan or NCU
                 if self.__class__.__name__ in ['FSP3000R7PowerSupplyMib',
                                                'FSP3000R7FanMib',
@@ -84,17 +87,37 @@ class FSP3000R7MibCommon(SnmpPlugin):
                   om.snmpindex = int(entityIndex)
                   log.info('Found component at: %s inventoryUnitName: %s',
                            modName, invName)
+
                   rm.append(om)
 
                 # Now find sub-organizers that respond to OPR
                 if modName not in containsOPRModules:
                     continue
+
+                # Skip modules that are out of service
+                if not self._entity_is_in_service(modName, adminStateTable):
+                    continue
+
                 for entityIndex in containsOPRModules[modName]:
                     # skip non-production components
-                    if not (entityIndex in entityTable
-                      and 'entityAssignmentState' in entityTable[entityIndex]
-                      and entityTable[entityIndex]['entityAssignmentState']==1):
+                    entity_assigned = (
+                        entityIndex in entityTable
+                        and entityTable[entityIndex].get('entityAssignmentState') == AssignmentState.ASSIGNED
+                    )
+
+                    # Sub-organizers with EquipmentState.UNDEFINED or no equipment state should be considered valid
+                    entity_equipped = (
+                        entityIndex in entityTable
+                        and entityTable[entityIndex].get('entityEquipmentState') in (
+                            None,
+                            EquipmentState.UNDEFINED,
+                            EquipmentState.EQUIPPED,
+                        )
+                    )
+
+                    if not (entity_assigned and entity_equipped):
                         continue;
+
                     om = self.objectMap()
                     om.EntityIndex = int(entityIndex)
                     om.inventoryUnitName = invName
@@ -109,11 +132,35 @@ class FSP3000R7MibCommon(SnmpPlugin):
                     om.title = om.entityIndexAid
                     om.snmpindex = int(entityIndex)
                     log.info('Found component at: %s inventoryUnitName: %s',
-                             om.entityIndexAid, om.inventoryUnitName)
+                             om.entityIndexAid, invName)
 
                     rm.append(om)
 
         return rm
+
+    def _entity_is_in_service(self, entityIndexAid, adminStateTable):
+        """
+        To be considered "in service", adminState must either be undefined,
+        non-existent, in service, or automatically in service. This seems to
+        only exist for module-level components like "MOD-2-2", "MOD-1-PSU10".
+        """
+        return self._get_admin_state(entityIndexAid, adminStateTable) in (
+            AdminState.UNDEFINED,
+            AdminState.AUTO_IN_SERVICE,
+            AdminState.IN_SERVICE,
+        )
+
+    def _get_admin_state(self, entityIndexAid, adminStateTable):
+        """
+        Since the table containing adminStatus uses a different indexing system,
+        use the entityEqptAidString to match the alternate index and return the
+        adminState if available.
+        """
+        for index, attributes in adminStateTable.items():
+            if entityIndexAid == attributes.get('entityEqptAidString'):
+                return attributes.get('moduleDefAdmin', AdminState.UNDEFINED)
+
+        return AdminState.UNDEFINED
 
     def __model_match(self,inventoryUnitName,componentModels):
         for model in componentModels:
@@ -128,13 +175,12 @@ class FSP3000R7MibCommon(SnmpPlugin):
                 return True
         return False
 
-
     def __make_sort_key(self,entityIndexAid):
         """Return a string to sort on, e.g. 'MOD-1-3' -> '001003000000'
 and 'VCH-1-7-N1' -> ' 1 7VCH N1'"""
         a = entityIndexAid.split('-',4)
         if len(a) < 3:
             return '000000000'
-        if entityIndexAid.startswith('MOD-') or entityIndexAid.startswith('FAN-') or entityIndexAid.startswith('MODC-') or entityIndexAid.startswith(FANC-)::
+        if entityIndexAid.startswith('MOD-') or entityIndexAid.startswith('FAN-') or entityIndexAid.startswith('MODC-') or entityIndexAid.startswith('FANC-'):
             return "%03s%03s%03s000" % (a[1],a[2],a[0])
         return "%03s%03s%03s%03s" % (a[1],a[2],a[0],a[3])

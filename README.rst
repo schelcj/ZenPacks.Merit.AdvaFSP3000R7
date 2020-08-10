@@ -210,6 +210,16 @@ Change History
     models.  Fixed bug in RenderServer.py so the command will work on devices
     on remote collectors.
 
+* 1.15
+
+  * Added support for more 100 Gig hardware
+  * Added checks for AdminState to ignore out-of-service components
+  * Changed component modeling for OTU ports to continue search after first port on a card
+  * Added new data/graphs:
+    * Added Rx, Tx, and SNR to OTU100Gig
+    * Added Rx to Optical100Gig
+    * Added SNR, FEC to Transponders
+
 Known Issues
 ===========
 
