@@ -19,7 +19,6 @@ from re import match
 from Products.DataCollector.plugins.CollectorPlugin import SnmpPlugin, GetTableMap, GetMap
 from Products.DataCollector.plugins.DataMaps import ObjectMap
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibPickle import getCache
-from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibCommon import FSP3000R7MibCommon
 from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import AssignmentState
 from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import EquipmentState
 
@@ -27,9 +26,8 @@ from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import EquipmentState
 # Use SNMP data from Device Modeler in a cache file.  Can't be a PythonPlugin
 # since those run before any SnmpPlugin; device modeler is an PythonPlugin so
 # the cache file will be created before this is run.
-# Need to override FSP3000R7MibCommon.process() since some Muxsponder OTU ports
-# don't respond to OPR.
-class FSP3000R7OTU100GMib(FSP3000R7MibCommon):
+# Can't use FSP3000R7MibCommon since Muxsponder OTU ports don't respond to OPR
+class FSP3000R7OTU100GMib(SnmpPlugin):
 
     modname = 'ZenPacks.Merit.AdvaFSP3000R7.FSP3000R7OTU100Gig'
     relname = 'FSP3000R7OTU100G'
@@ -73,12 +71,7 @@ class FSP3000R7OTU100GMib(FSP3000R7MibCommon):
             bladeIndexAid = entityTable[bladeEntityIndex]['entityIndexAid']
             if not bladeInv in componentModels:
                 continue
-
-            # Skip blade if out of service
-            if not self._entity_is_in_service(bladeIndexAid, adminStateTable):
-                continue
-
-            log.info('found 100G Muxponder OTU matching model %s in module %s', bladeInv, bladeIndexAid)
+            log.info('found 100G Muxponder OTU matching model %s' % bladeInv)
     
             # find ports from entityContainedIn for 100G OTU entityIndex
             ports = self.__findPorts(log,bladeEntityIndex,entityTable)
