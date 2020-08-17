@@ -50,20 +50,22 @@ class FSP3000R7ModuleMib(SnmpPlugin):
         rm = self.relMap()
 
         # pick up MOD-* containers from entityTable
-        for entityIndex in entityTable:
+        for entityIndex, attributes in entityTable.items():
             # Power Supply, NCU and Fan models are already top level containers
-            if not (entityIndex in inventoryTable):
+            if entityIndex not in inventoryTable:
                 continue
             inventoryUnitName = inventoryTable[entityIndex]['inventoryUnitName']
             if inventoryUnitName in FanorNCUorPSModels:
                 continue
-            if entityTable[entityIndex]['entityIndexAid'].startswith('MOD-') or entityTable[entityIndex]['entityIndexAid'].startswith('MODC-'):
+
+            entityIndexAid = attributes['entityIndexAid']
+
+            if entityIndexAid.startswith('MOD-') or entityIndexAid.startswith('MODC-'):
                 om = self.objectMap()
                 om.EntityIndex = int(entityIndex)
                 om.inventoryUnitName = inventoryUnitName
-                om.entityIndexAid = entityTable[entityIndex]['entityIndexAid']
-                om.entityAssignmentState = \
-                    entityTable[entityIndex]['entityAssignmentState']
+                om.entityIndexAid = entityIndexAid
+                om.entityAssignmentState = attributes['entityAssignmentState']
                 om.interfaceConfigId     = ''
                 om.sortKey               = '000000000'
                 om.entityAssignmentState = 'Not set by modeler'
