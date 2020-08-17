@@ -71,7 +71,8 @@ class FSP3000R7OTU100GMib(SnmpPlugin):
             bladeIndexAid = entityTable[bladeEntityIndex]['entityIndexAid']
             if not bladeInv in componentModels:
                 continue
-            log.info('found 100G Muxponder OTU matching model %s' % bladeInv)
+
+            log.info('found 100G Muxponder OTU matching model %s in module %s', bladeInv, bladeIndexAid)
     
             # find ports from entityContainedIn for 100G OTU entityIndex
             ports = self.__findPorts(log,bladeEntityIndex,entityTable)
