@@ -182,7 +182,12 @@ class FSP3000R7DeviceMib(PythonPlugin):
             pass
         return results
 
-
+    """
+    Compile SNMP results by index.
+    This assumes that the index is a single integer following a dot at the
+    end of an OID. If we need to compile indexes that contain dots themselves
+    (12.34.56 instead of just 123456), this method will need to be modified.
+    """
     def __make_cacheable(self,name,raw,results):
         for oid,val in raw.items():
             index = oid.split('.')[-1]
