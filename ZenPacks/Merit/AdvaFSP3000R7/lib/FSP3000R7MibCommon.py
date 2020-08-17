@@ -109,11 +109,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
                         )
                     )
 
-                    if not (entity_assigned or entity_equipped):
-                        log.info('Skipping %s, assigned=%s, equipped=%s',
-                                 entityTable[entityIndex]['entityIndexAid'],
-                                 entity_assigned,
-                                 entity_equipped)
+                    if not (entity_assigned and entity_equipped):
                         continue;
 
                     om = self.objectMap()
@@ -148,7 +144,6 @@ class FSP3000R7MibCommon(SnmpPlugin):
             if inventoryUnitName == model:
                 return True
         return False
-
 
     def __make_sort_key(self,entityIndexAid):
         """Return a string to sort on, e.g. 'MOD-1-3' -> '001003000000'
