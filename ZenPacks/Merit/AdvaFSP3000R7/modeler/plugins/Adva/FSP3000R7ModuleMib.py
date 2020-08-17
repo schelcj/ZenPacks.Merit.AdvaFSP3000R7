@@ -41,7 +41,7 @@ class FSP3000R7ModuleMib(FSP3000R7MibCommon):
 
         inventoryTable = entityTable = opticalIfDiagTable = False
         containsModules = {}
-        gotCache, inventoryTable, entityTable, opticalIfDiagTable, adminStateTable, \
+        gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
             containsModules = getCache(device.id, self.name(), log)
         if not gotCache:
             log.debug('Could not get cache for %s' % self.name())

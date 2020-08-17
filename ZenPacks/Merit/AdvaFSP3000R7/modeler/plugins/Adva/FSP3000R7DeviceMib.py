@@ -54,8 +54,6 @@ class FSP3000R7DeviceMib(PythonPlugin):
         entityAssignmentStateOID = '1.3.6.1.4.1.2544.2.5.5.2.1.7'
         entityEquipmentStateOID = '1.3.6.1.4.1.2544.2.5.5.2.1.8'
         opticalIfDiagInputPowerOID = '1.3.6.1.4.1.2544.1.11.2.4.3.5.1.3'
-        entityEqptAidStringOID = '1.3.6.1.4.1.2544.1.11.7.2.2.1.6'
-        moduleDefAdminOID = '1.3.6.1.4.1.2544.1.11.10.3.3.7.1.26'
 
         getdata = {}
         
@@ -64,44 +62,22 @@ class FSP3000R7DeviceMib(PythonPlugin):
         self.__snmpget(device,neSwVersion,'setOSProductKey',getdata)
         log.info('Got software version %s' % getdata['setOSProductKey'])
 
-        # The "def" tables in ADVA-FSPR7-DEF-MIB uses different indexes to refer to the
-        # same entities. Match on entityEqptAidString == entityIndexAid when needed.
-        adminStateTable = {}
-        raw_adminState = {}
-        raw_adminState = self.__snmpgettable(device,moduleDefAdminOID)
-        self.__make_cacheable('moduleDefAdmin',
-                              moduleDefAdminOID,
-                              raw_adminState,
-                              adminStateTable)
-
-        raw_entityEqptAidString = {}
-        raw_entityEqptAidString = self.__snmpgettable(device,entityEqptAidStringOID)
-        self.__make_cacheable('entityEqptAidString',
-                              entityEqptAidStringOID,
-                              raw_entityEqptAidString,
-                              adminStateTable)
-
         inventoryTable = {}
         raw_inventory = {}
         raw_inventory = self.__snmpgettable(device,inventoryUnitNameOID)
-        self.__make_cacheable('inventoryUnitName',
-                              inventoryUnitNameOID,
-                              raw_inventory,
-                              inventoryTable)
+        self.__make_cacheable('inventoryUnitName',raw_inventory,inventoryTable)
         log.debug('inventoryTable: %s' % pformat(inventoryTable))
 
         entityTable = {}
         raw_entityContainedIn = {}
         raw_entityContainedIn = self.__snmpgettable(device,entityContainedInOID)
         self.__make_cacheable('entityContainedIn',
-                              entityContainedInOID,
                               raw_entityContainedIn,
                               entityTable)
 
         raw_entityIndexAid = {}
         raw_entityIndexAid = self.__snmpgettable(device,entityIndexAidOID)
         self.__make_cacheable('entityIndexAid',
-                              entityIndexAidOID,
                               raw_entityIndexAid,
                               entityTable)
 
@@ -109,7 +85,6 @@ class FSP3000R7DeviceMib(PythonPlugin):
         raw_interfaceConfigIdentifier = \
           self.__snmpgettable(device,interfaceConfigIdentifierOID)
         self.__make_cacheable('interfaceConfigIdentifier',
-                              interfaceConfigIdentifierOID,
                               raw_interfaceConfigIdentifier,
                               entityTable)
 
@@ -117,7 +92,6 @@ class FSP3000R7DeviceMib(PythonPlugin):
         raw_entityAssignmentState = self.__snmpgettable(device,
                                                        entityAssignmentStateOID)
         self.__make_cacheable('entityAssignmentState',
-                              entityAssignmentStateOID,
                               raw_entityAssignmentState,
                               entityTable)
 
@@ -125,7 +99,6 @@ class FSP3000R7DeviceMib(PythonPlugin):
         raw_entityEquipmentState = self.__snmpgettable(device,
                                                        entityEquipmentStateOID)
         self.__make_cacheable('entityEquipmentState',
-                              entityEquipmentStateOID,
                               raw_entityEquipmentState,
                               entityTable)
         log.debug('entityTable: %s' % pformat(entityTable))
@@ -135,7 +108,6 @@ class FSP3000R7DeviceMib(PythonPlugin):
         raw_opticalIfDiagInputPower= self.__snmpgettable(device,
                                                      opticalIfDiagInputPowerOID)
         self.__make_cacheable('opticalIfDiagInputPower',
-                              opticalIfDiagInputPowerOID,
                               raw_opticalIfDiagInputPower,
                               opticalIfDiagTable)
         # sometimes Avda shelves give bogus -65535 input power readings for
@@ -159,7 +131,6 @@ class FSP3000R7DeviceMib(PythonPlugin):
             cPickle.dump(inventoryTable,cache_file)
             cPickle.dump(entityTable,cache_file)
             cPickle.dump(opticalIfDiagTable,cache_file)
-            cPickle.dump(adminStateTable,cache_file)
             cPickle.dump(time.time(),cache_file)
             cache_file.close()
         except IOError,cPickle.PickleError:
@@ -212,14 +183,9 @@ class FSP3000R7DeviceMib(PythonPlugin):
         return results
 
 
-    def __make_cacheable(self,name,base_oid,raw,results):
-        """
-        Aggregate SNMP results by index.
-        Most indexes are simple integers, but some are dotted (123456789 vs. 123.456.789).
-        Find the index by simply removing the base OID and one dot.
-        """
+    def __make_cacheable(self,name,raw,results):
         for oid,val in raw.items():
-            index = oid.replace(base_oid + '.', '')
+            index = oid.split('.')[-1]
             if index not in results:
                 results[index] = {}
             results[index][name] = val
