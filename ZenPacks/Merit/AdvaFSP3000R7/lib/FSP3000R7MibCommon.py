@@ -18,7 +18,6 @@ from Products.DataCollector.plugins.CollectorPlugin import SnmpPlugin, GetTableM
 from Products.DataCollector.plugins.DataMaps import ObjectMap
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7Channels import Channels
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibPickle import getCache
-from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import AdminState
 from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import AssignmentState
 from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import EquipmentState
 
@@ -47,7 +46,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
 
         inventoryTable = entityTable = opticalIfDiagTable = False
         containsOPRModules = {}
-        gotCache, inventoryTable, entityTable, opticalIfDiagTable, adminStateTable, \
+        gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
             containsOPRModules = getCache(device.id, self.name(), log)
         if not gotCache:
             log.debug('Could not get cache for %s' % self.name())
@@ -93,11 +92,6 @@ class FSP3000R7MibCommon(SnmpPlugin):
                 # Now find sub-organizers that respond to OPR
                 if modName not in containsOPRModules:
                     continue
-
-                # Skip modules that are out of service
-                if not self._entity_is_in_service(modName, adminStateTable):
-                    continue
-
                 for entityIndex in containsOPRModules[modName]:
                     # skip non-production components
                     entity_assigned = (
@@ -137,30 +131,6 @@ class FSP3000R7MibCommon(SnmpPlugin):
                     rm.append(om)
 
         return rm
-
-    def _entity_is_in_service(self, entityIndexAid, adminStateTable):
-        """
-        To be considered "in service", adminState must either be undefined,
-        non-existent, in service, or automatically in service. This seems to
-        only exist for module-level components like "MOD-2-2", "MOD-1-PSU10".
-        """
-        return self._get_admin_state(entityIndexAid, adminStateTable) in (
-            AdminState.UNDEFINED,
-            AdminState.AUTO_IN_SERVICE,
-            AdminState.IN_SERVICE,
-        )
-
-    def _get_admin_state(self, entityIndexAid, adminStateTable):
-        """
-        Since the table containing adminStatus uses a different indexing system,
-        use the entityEqptAidString to match the alternate index and return the
-        adminState if available.
-        """
-        for index, attributes in adminStateTable.items():
-            if entityIndexAid == attributes.get('entityEqptAidString'):
-                return attributes.get('moduleDefAdmin', AdminState.UNDEFINED)
-
-        return AdminState.UNDEFINED
 
     def __model_match(self,inventoryUnitName,componentModels):
         for model in componentModels:
