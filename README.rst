@@ -220,6 +220,10 @@ Change History
     * Added Rx to Optical100Gig
     * Added SNR, FEC to Transponders
 
+* 1.16
+
+  * Removed checks for AdminState
+
 Known Issues
 ===========
 
