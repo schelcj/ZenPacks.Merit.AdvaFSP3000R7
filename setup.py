@@ -3,7 +3,7 @@
 # or saved.  Do not modify them directly here.
 # NB: PACKAGES is deprecated
 NAME = "ZenPacks.Merit.AdvaFSP3000R7"
-VERSION = "1.16"
+VERSION = "1.17"
 AUTHOR = "Merit Network, Inc."
 LICENSE = "GPLv2"
 NAMESPACE_PACKAGES = ['ZenPacks', 'ZenPacks.Merit']
