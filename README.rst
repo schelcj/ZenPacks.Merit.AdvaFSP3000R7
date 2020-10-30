@@ -228,7 +228,7 @@ Change History
 
 * 1.16
 
-  * Removed checks for adminState when determining "in production" components
+  * Removed checks for AdminState
 
 * 1.17
 
