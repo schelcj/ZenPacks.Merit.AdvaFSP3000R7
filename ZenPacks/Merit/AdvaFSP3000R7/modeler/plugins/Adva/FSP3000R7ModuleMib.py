@@ -7,7 +7,6 @@ Look for modules that contain amplifier stages, transponder optics. etc.
 from Products.DataCollector.plugins.CollectorPlugin import SnmpPlugin, GetTableMap, GetMap
 from Products.DataCollector.plugins.DataMaps import ObjectMap
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7Channels import Channels
-from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibCommon import FSP3000R7MibCommon
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibPickle import getCache
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FanModels import FanModels
 from ZenPacks.Merit.AdvaFSP3000R7.lib.NCUModels import NCUModels
@@ -18,7 +17,7 @@ FanorNCUorPSModels = [item for sublist in \
                           [FanModels,NCUModels,PowerSupplyModels]
                               for item in sublist]
 
-class FSP3000R7ModuleMib(FSP3000R7MibCommon):
+class FSP3000R7ModuleMib(SnmpPlugin):
 
     modname = "ZenPacks.Merit.AdvaFSP3000R7.FSP3000R7Module"
     relname = "FSP3000R7Mod"
@@ -41,7 +40,7 @@ class FSP3000R7ModuleMib(FSP3000R7MibCommon):
 
         inventoryTable = entityTable = opticalIfDiagTable = False
         containsModules = {}
-        gotCache, inventoryTable, entityTable, opticalIfDiagTable, adminStateTable, \
+        gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
             containsModules = getCache(device.id, self.name(), log)
         if not gotCache:
             log.debug('Could not get cache for %s' % self.name())
@@ -59,10 +58,7 @@ class FSP3000R7ModuleMib(FSP3000R7MibCommon):
             if inventoryUnitName in FanorNCUorPSModels:
                 continue
 
-            # Skip module if out of service
             entityIndexAid = attributes['entityIndexAid']
-            if not self._entity_is_in_service(entityIndexAid, adminStateTable):
-                continue
 
             if entityIndexAid.startswith('MOD-') or entityIndexAid.startswith('MODC-'):
                 om = self.objectMap()

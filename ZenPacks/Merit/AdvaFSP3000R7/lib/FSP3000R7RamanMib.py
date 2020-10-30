@@ -48,7 +48,7 @@ class FSP3000R7RamanPortMib(SnmpPlugin):
         # cached data from device modeler
         inventoryTable = entityTable = opticalIfDiagTable = False
         containsOPRModules = {}
-        gotCache, inventoryTable, entityTable, opticalIfDiagTable, adminStateTable, \
+        gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
             containsOPRModules = getCache(device.id, self.name(), log)
         if not gotCache:
             log.debug('Could not get cache for %s' % self.name())

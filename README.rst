@@ -223,7 +223,7 @@ Change History
     * Added Rx, Tx, and SNR to OTU100Gig
 
     * Added Rx to Optical100Gig
-
+Sdq 2072 add low threshold 100g optical
     * Added SNR, FEC to Transponders
 
 * 1.16
