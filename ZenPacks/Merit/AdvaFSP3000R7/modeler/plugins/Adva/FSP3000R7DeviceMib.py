@@ -65,40 +65,45 @@ class FSP3000R7DeviceMib(PythonPlugin):
         inventoryTable = {}
         raw_inventory = {}
         raw_inventory = self.__snmpgettable(device,inventoryUnitNameOID)
-        self.__make_cacheable('inventoryUnitName',raw_inventory,inventoryTable)
+        self.__make_cacheable(inventoryUnitNameOID, 'inventoryUnitName', raw_inventory, inventoryTable)
         log.debug('inventoryTable: %s' % pformat(inventoryTable))
 
         entityTable = {}
         raw_entityContainedIn = {}
         raw_entityContainedIn = self.__snmpgettable(device,entityContainedInOID)
-        self.__make_cacheable('entityContainedIn',
+        self.__make_cacheable(entityContainedInOID,
+                              'entityContainedIn',
                               raw_entityContainedIn,
                               entityTable)
 
         raw_entityIndexAid = {}
         raw_entityIndexAid = self.__snmpgettable(device,entityIndexAidOID)
-        self.__make_cacheable('entityIndexAid',
+        self.__make_cacheable(entityIndexAidOID,
+                              'entityIndexAid',
                               raw_entityIndexAid,
                               entityTable)
 
         raw_interfaceConfigIdentifier = {}
         raw_interfaceConfigIdentifier = \
           self.__snmpgettable(device,interfaceConfigIdentifierOID)
-        self.__make_cacheable('interfaceConfigIdentifier',
+        self.__make_cacheable(interfaceConfigIdentifierOID,
+                              'interfaceConfigIdentifier',
                               raw_interfaceConfigIdentifier,
                               entityTable)
 
         raw_entityAssignmentState = {}
         raw_entityAssignmentState = self.__snmpgettable(device,
                                                        entityAssignmentStateOID)
-        self.__make_cacheable('entityAssignmentState',
+        self.__make_cacheable(entityAssignmentStateOID,
+                              'entityAssignmentState',
                               raw_entityAssignmentState,
                               entityTable)
 
         raw_entityEquipmentState = {}
         raw_entityEquipmentState = self.__snmpgettable(device,
                                                        entityEquipmentStateOID)
-        self.__make_cacheable('entityEquipmentState',
+        self.__make_cacheable(entityEquipmentStateOID,
+                              'entityEquipmentState',
                               raw_entityEquipmentState,
                               entityTable)
         log.debug('entityTable: %s' % pformat(entityTable))
@@ -107,7 +112,8 @@ class FSP3000R7DeviceMib(PythonPlugin):
         raw_opticalIfDiagInputPower = {}
         raw_opticalIfDiagInputPower= self.__snmpgettable(device,
                                                      opticalIfDiagInputPowerOID)
-        self.__make_cacheable('opticalIfDiagInputPower',
+        self.__make_cacheable(opticalIfDiagInputPowerOID,
+                              'opticalIfDiagInputPower',
                               raw_opticalIfDiagInputPower,
                               opticalIfDiagTable)
         # sometimes Avda shelves give bogus -65535 input power readings for
@@ -183,14 +189,14 @@ class FSP3000R7DeviceMib(PythonPlugin):
         return results
 
     """
-    Compile SNMP results by index.
-    This assumes that the index is a single integer following a dot at the
-    end of an OID. If we need to compile indexes that contain dots themselves
-    (12.34.56 instead of just 123456), this method will need to be modified.
+    Compile SNMP results by index
+    May use single- or dotted-value indexes. For base OID 1.2.3.4.5, the component indexes would be:
+      - 1.2.3.4.5.12345   -> 12345
+      - 1.2.3.4.5.1.234.5 -> 1.234.5
     """
-    def __make_cacheable(self,name,raw,results):
+    def __make_cacheable(self, base_oid, name, raw, results):
         for oid,val in raw.items():
-            index = oid.split('.')[-1]
+            index = oid.replace(base_oid + '.', '')
             if index not in results:
                 results[index] = {}
             results[index][name] = val
