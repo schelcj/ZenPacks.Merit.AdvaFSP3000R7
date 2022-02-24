@@ -126,9 +126,9 @@ def _build_opr_tree(
         if parent_field:
             parent_index = entity_table[entity_index].get(parent_field, None)
 
-	    parent_index = str(parent_index)
+            parent_index = str(parent_index)
 
-	    if not parent_index:
+            if not parent_index:
                 break
 
             parent_index_aid = entity_table[parent_index].get(aid_field, None)
