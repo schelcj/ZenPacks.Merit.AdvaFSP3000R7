@@ -1,15 +1,15 @@
 ######################################################################
 #
-# FSP3000R7RoadmMib modeler pluginn
+# FSP3000R7VchMib modeler pluginn
 #
-# Copyright (C) 2011 Russell Dwarshuis, Merit Network, Inc.
+# Copyright (C) 2022 Merit Network, Inc.
 #
 # This program can be used under the GNU General Public License version 2
 # You can find full information here: http://www.zenoss.com/oss
 #
 ######################################################################
 
-__doc__="""FSP3000R70RoadmVchMib
+__doc__="""FSP3000R7VchMib
 
 FSP3000R7VchMib maps Virtual Channels on a FSP3000R7 system
 
