@@ -39,12 +39,12 @@ class FSP3000R7Component(DeviceComponent, ManagedEntity, ZenPackPersistence):
     inventoryUnitName     = 'Not set by modeler'
     entityIndexAid        = 'Not set by modeler'
     interfaceConfigId     = ''
-    sortKey               = '000000000'
+    sortKey               = ''
     entityAssignmentState = 'Not set by modeler'
 
     _properties = (
         # from ADVA inventory entityTable
-        {'id':'EntityIndex',           'type':'int',    'mode':''},
+        {'id':'EntityIndex',           'type':'string',    'mode':''},
         # from ADVA inventory MIB
         {'id':'inventoryUnitName',     'type':'string', 'mode':''},
         # human readable physical location of Component in shelf
