@@ -55,6 +55,11 @@ class FSP3000R7DeviceMib(PythonPlugin):
         entityEquipmentStateOID = '1.3.6.1.4.1.2544.2.5.5.2.1.8'
         opticalIfDiagInputPowerOID = '1.3.6.1.4.1.2544.1.11.2.4.3.5.1.3'
 
+        # 9ROADM Virtual Channels are in a separate SNMP location with alternate indexes
+        facilityPhysInstValueInputPowerOID = '1.3.6.1.4.1.2544.1.11.11.7.2.1.1.1.2'
+        entityFacilityAidStringOID = '1.3.6.1.4.1.2544.1.11.7.2.7.1.6'
+        virtualPortAliasOID = '1.3.6.1.4.1.2544.1.11.7.3.4.2.1.4'
+
         getdata = {}
         
         self.__snmpget(device,neSystemId,'setHWTag',getdata)
@@ -108,6 +113,25 @@ class FSP3000R7DeviceMib(PythonPlugin):
                               entityTable)
         log.debug('entityTable: %s' % pformat(entityTable))
 
+        facilityTable = {}
+        raw_entityFacilityAidString = {}
+        raw_entityFacilityAidString = self.__snmpgettable(device,
+                                                       entityFacilityAidStringOID)
+        self.__make_cacheable(entityFacilityAidStringOID,
+                              'entityFacilityAidString',
+                              raw_entityFacilityAidString,
+                              facilityTable)
+        log.debug('facilityTable: %s' % pformat(facilityTable))
+
+        raw_virtualPortAlias = {}
+        raw_virtualPortAlias = self.__snmpgettable(device,
+                                                       virtualPortAliasOID)
+        self.__make_cacheable(virtualPortAliasOID,
+                              'virtualPortAlias',
+                              raw_virtualPortAlias,
+                              facilityTable)
+        log.debug('facilityTable: %s' % pformat(facilityTable))
+
         opticalIfDiagTable = {}
         raw_opticalIfDiagInputPower = {}
         raw_opticalIfDiagInputPower= self.__snmpgettable(device,
@@ -116,6 +140,16 @@ class FSP3000R7DeviceMib(PythonPlugin):
                               'opticalIfDiagInputPower',
                               raw_opticalIfDiagInputPower,
                               opticalIfDiagTable)
+
+        facilityPhysInstValueTable = {}
+        raw_facilityPhysInstValueInputPower = {}
+        raw_facilityPhysInstValueInputPower = self.__snmpgettable(device,
+                                                     facilityPhysInstValueInputPowerOID)
+        self.__make_cacheable(facilityPhysInstValueInputPowerOID,
+                              'facilityPhysInstValueInputPower',
+                              raw_facilityPhysInstValueInputPower,
+                              facilityPhysInstValueTable)
+
         # sometimes Avda shelves give bogus -65535 input power readings for
         # components that really do have input power readings when you do a
         # specific snmpget on them.
@@ -137,6 +171,8 @@ class FSP3000R7DeviceMib(PythonPlugin):
             cPickle.dump(inventoryTable,cache_file)
             cPickle.dump(entityTable,cache_file)
             cPickle.dump(opticalIfDiagTable,cache_file)
+            cPickle.dump(facilityTable,cache_file)
+            cPickle.dump(facilityPhysInstValueTable,cache_file)
             cPickle.dump(time.time(),cache_file)
             cache_file.close()
         except IOError,cPickle.PickleError:
@@ -188,14 +224,14 @@ class FSP3000R7DeviceMib(PythonPlugin):
             pass
         return results
 
-    """
-    Compile SNMP results by index
-    May use single- or dotted-value indexes. For base OID 1.2.3.4.5, the component indexes would be:
-      - 1.2.3.4.5.12345   -> 12345
-      - 1.2.3.4.5.1.234.5 -> 1.234.5
-    """
     def __make_cacheable(self, base_oid, name, raw, results):
-        for oid,val in raw.items():
+        """
+        Compile SNMP results by index
+        May use single- or dotted-value indexes. For base OID 1.2.3.4.5, the component indexes would be:
+          - 1.2.3.4.5.12345   -> 12345
+          - 1.2.3.4.5.1.234.5 -> 1.234.5
+        """
+        for oid, val in raw.items():
             index = oid.replace(base_oid + '.', '')
             if index not in results:
                 results[index] = {}
