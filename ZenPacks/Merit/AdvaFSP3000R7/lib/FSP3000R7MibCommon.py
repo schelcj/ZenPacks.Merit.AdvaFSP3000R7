@@ -60,7 +60,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
             invName = inventoryUnitName['inventoryUnitName']
             modName = entityTable[entityIndex]['entityIndexAid']
             # if model name matches, assigned and equiped:
-            if self.__model_match(invName, self.componentModels) \
+            if self._model_match(invName, self.componentModels) \
               and entityIndex in entityTable \
               and 'entityAssignmentState' in entityTable[entityIndex] \
               and 'entityEquipmentState' in entityTable[entityIndex] \
@@ -132,7 +132,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
 
         return rm
 
-    def __model_match(self,inventoryUnitName,componentModels):
+    def _model_match(self,inventoryUnitName,componentModels):
         for model in componentModels:
             # Test different channel variations if there's a # on end
             if model.endswith('#'):
