@@ -74,5 +74,9 @@ class NCUInfo(ComponentInfo):
     inventoryUnitName = ProxyProperty("inventoryUnitName")
     interfaceConfigId = ProxyProperty("interfaceConfigId")
 
+class VCHInfo(ComponentInfo):
+    implements(interfaces.IVCHInfo)
+    interfaceConfigId = ProxyProperty("interfaceConfigId")
+
 class FanInfo(ComponentInfo):
     implements(interfaces.IFanInfo)
