@@ -55,6 +55,11 @@ class FSP3000R7DeviceMib(PythonPlugin):
         entityEquipmentStateOID = '1.3.6.1.4.1.2544.2.5.5.2.1.8'
         opticalIfDiagInputPowerOID = '1.3.6.1.4.1.2544.1.11.2.4.3.5.1.3'
 
+        # 9ROADM Virtual Channels are in a separate SNMP location with alternate indexes
+        facilityPhysInstValueInputPowerOID = '1.3.6.1.4.1.2544.1.11.11.7.2.1.1.1.2'
+        entityFacilityAidStringOID = '1.3.6.1.4.1.2544.1.11.7.2.7.1.6'
+        virtualPortAliasOID = '1.3.6.1.4.1.2544.1.11.7.3.4.2.1.4'
+
         getdata = {}
         
         self.__snmpget(device,neSystemId,'setHWTag',getdata)
@@ -65,51 +70,86 @@ class FSP3000R7DeviceMib(PythonPlugin):
         inventoryTable = {}
         raw_inventory = {}
         raw_inventory = self.__snmpgettable(device,inventoryUnitNameOID)
-        self.__make_cacheable('inventoryUnitName',raw_inventory,inventoryTable)
+        self.__make_cacheable(inventoryUnitNameOID, 'inventoryUnitName', raw_inventory, inventoryTable)
         log.debug('inventoryTable: %s' % pformat(inventoryTable))
 
         entityTable = {}
         raw_entityContainedIn = {}
         raw_entityContainedIn = self.__snmpgettable(device,entityContainedInOID)
-        self.__make_cacheable('entityContainedIn',
+        self.__make_cacheable(entityContainedInOID,
+                              'entityContainedIn',
                               raw_entityContainedIn,
                               entityTable)
 
         raw_entityIndexAid = {}
         raw_entityIndexAid = self.__snmpgettable(device,entityIndexAidOID)
-        self.__make_cacheable('entityIndexAid',
+        self.__make_cacheable(entityIndexAidOID,
+                              'entityIndexAid',
                               raw_entityIndexAid,
                               entityTable)
 
         raw_interfaceConfigIdentifier = {}
         raw_interfaceConfigIdentifier = \
           self.__snmpgettable(device,interfaceConfigIdentifierOID)
-        self.__make_cacheable('interfaceConfigIdentifier',
+        self.__make_cacheable(interfaceConfigIdentifierOID,
+                              'interfaceConfigIdentifier',
                               raw_interfaceConfigIdentifier,
                               entityTable)
 
         raw_entityAssignmentState = {}
         raw_entityAssignmentState = self.__snmpgettable(device,
                                                        entityAssignmentStateOID)
-        self.__make_cacheable('entityAssignmentState',
+        self.__make_cacheable(entityAssignmentStateOID,
+                              'entityAssignmentState',
                               raw_entityAssignmentState,
                               entityTable)
 
         raw_entityEquipmentState = {}
         raw_entityEquipmentState = self.__snmpgettable(device,
                                                        entityEquipmentStateOID)
-        self.__make_cacheable('entityEquipmentState',
+        self.__make_cacheable(entityEquipmentStateOID,
+                              'entityEquipmentState',
                               raw_entityEquipmentState,
                               entityTable)
         log.debug('entityTable: %s' % pformat(entityTable))
+
+        facilityTable = {}
+        raw_entityFacilityAidString = {}
+        raw_entityFacilityAidString = self.__snmpgettable(device,
+                                                       entityFacilityAidStringOID)
+        self.__make_cacheable(entityFacilityAidStringOID,
+                              'entityFacilityAidString',
+                              raw_entityFacilityAidString,
+                              facilityTable)
+        log.debug('facilityTable: %s' % pformat(facilityTable))
+
+        raw_virtualPortAlias = {}
+        raw_virtualPortAlias = self.__snmpgettable(device,
+                                                       virtualPortAliasOID)
+        self.__make_cacheable(virtualPortAliasOID,
+                              'virtualPortAlias',
+                              raw_virtualPortAlias,
+                              facilityTable)
+        log.debug('facilityTable: %s' % pformat(facilityTable))
 
         opticalIfDiagTable = {}
         raw_opticalIfDiagInputPower = {}
         raw_opticalIfDiagInputPower= self.__snmpgettable(device,
                                                      opticalIfDiagInputPowerOID)
-        self.__make_cacheable('opticalIfDiagInputPower',
+        self.__make_cacheable(opticalIfDiagInputPowerOID,
+                              'opticalIfDiagInputPower',
                               raw_opticalIfDiagInputPower,
                               opticalIfDiagTable)
+
+        facilityPhysInstValueTable = {}
+        raw_facilityPhysInstValueInputPower = {}
+        raw_facilityPhysInstValueInputPower = self.__snmpgettable(device,
+                                                     facilityPhysInstValueInputPowerOID)
+        self.__make_cacheable(facilityPhysInstValueInputPowerOID,
+                              'facilityPhysInstValueInputPower',
+                              raw_facilityPhysInstValueInputPower,
+                              facilityPhysInstValueTable)
+
         # sometimes Avda shelves give bogus -65535 input power readings for
         # components that really do have input power readings when you do a
         # specific snmpget on them.
@@ -131,6 +171,8 @@ class FSP3000R7DeviceMib(PythonPlugin):
             cPickle.dump(inventoryTable,cache_file)
             cPickle.dump(entityTable,cache_file)
             cPickle.dump(opticalIfDiagTable,cache_file)
+            cPickle.dump(facilityTable,cache_file)
+            cPickle.dump(facilityPhysInstValueTable,cache_file)
             cPickle.dump(time.time(),cache_file)
             cache_file.close()
         except IOError,cPickle.PickleError:
@@ -182,15 +224,15 @@ class FSP3000R7DeviceMib(PythonPlugin):
             pass
         return results
 
-    """
-    Compile SNMP results by index.
-    This assumes that the index is a single integer following a dot at the
-    end of an OID. If we need to compile indexes that contain dots themselves
-    (12.34.56 instead of just 123456), this method will need to be modified.
-    """
-    def __make_cacheable(self,name,raw,results):
-        for oid,val in raw.items():
-            index = oid.split('.')[-1]
+    def __make_cacheable(self, base_oid, name, raw, results):
+        """
+        Compile SNMP results by index
+        May use single- or dotted-value indexes. For base OID 1.2.3.4.5, the component indexes would be:
+          - 1.2.3.4.5.12345   -> 12345
+          - 1.2.3.4.5.1.234.5 -> 1.234.5
+        """
+        for oid, val in raw.items():
+            index = oid.replace(base_oid + '.', '')
             if index not in results:
                 results[index] = {}
             results[index][name] = val

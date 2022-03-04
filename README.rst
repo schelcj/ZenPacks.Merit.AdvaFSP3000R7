@@ -56,6 +56,10 @@ Modelers detect most blade and pluggable optical hardware types:
 
   * Component template graphs Laser bias current, Optical Power received and transmitted when it's available.
 
+* ROADM Virtual Channel Modeling
+
+  * Component template graphs Input Power and Output Power when available, typically for N(etwork) channels but not (C)lient channels.
+
 * Fan Component Modeling
 
 * Blade Modeling
@@ -233,6 +237,11 @@ Change History
 * 1.17
 
   * Added default low-level threshold to 100 Gig Optical components
+
+* 1.18
+
+  * Added support for Virtual Channel components using SNMP data from
+    entityFacilityTable and facilityPhysInstValueTable.
 
 Known Issues
 ============

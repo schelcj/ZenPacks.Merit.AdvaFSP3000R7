@@ -47,7 +47,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
         inventoryTable = entityTable = opticalIfDiagTable = False
         containsOPRModules = {}
         gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
-            containsOPRModules = getCache(device.id, self.name(), log)
+            facilityTable, facilityPhysInstValueTable, containsOPRModules = getCache(device.id, self.name(), log)
         if not gotCache:
             log.debug('Could not get cache for %s' % self.name())
             return
@@ -60,7 +60,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
             invName = inventoryUnitName['inventoryUnitName']
             modName = entityTable[entityIndex]['entityIndexAid']
             # if model name matches, assigned and equiped:
-            if self.__model_match(invName, self.componentModels) \
+            if self._model_match(invName, self.componentModels) \
               and entityIndex in entityTable \
               and 'entityAssignmentState' in entityTable[entityIndex] \
               and 'entityEquipmentState' in entityTable[entityIndex] \
@@ -78,7 +78,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
                       om.interfaceConfigId = \
                           entityTable[entityIndex]['interfaceConfigIdentifier']
                   om.entityIndexAid = modName
-                  om.sortKey = self.__make_sort_key(modName)
+                  om.sortKey = self._make_sort_key(modName)
                   om.entityAssignmentState = \
                       entityTable[entityIndex]['entityAssignmentState']
                   om.id = self.prepId(modName)
@@ -119,7 +119,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
                         om.interfaceConfigId = \
                            entityTable[entityIndex]['interfaceConfigIdentifier']
                     om.entityIndexAid=entityTable[entityIndex]['entityIndexAid']
-                    om.sortKey = self.__make_sort_key(om.entityIndexAid)
+                    om.sortKey = self._make_sort_key(om.entityIndexAid)
                     om.entityAssignmentState = \
                         entityTable[entityIndex]['entityAssignmentState']
                     om.id = self.prepId(om.entityIndexAid)
@@ -132,7 +132,7 @@ class FSP3000R7MibCommon(SnmpPlugin):
 
         return rm
 
-    def __model_match(self,inventoryUnitName,componentModels):
+    def _model_match(self,inventoryUnitName,componentModels):
         for model in componentModels:
             # Test different channel variations if there's a # on end
             if model.endswith('#'):
@@ -145,12 +145,24 @@ class FSP3000R7MibCommon(SnmpPlugin):
                 return True
         return False
 
-    def __make_sort_key(self,entityIndexAid):
-        """Return a string to sort on, e.g. 'MOD-1-3' -> '001003000000'
-and 'VCH-1-7-N1' -> ' 1 7VCH N1'"""
-        a = entityIndexAid.split('-',4)
-        if len(a) < 3:
-            return '000000000'
-        if entityIndexAid.startswith('MOD-') or entityIndexAid.startswith('FAN-') or entityIndexAid.startswith('MODC-') or entityIndexAid.startswith('FANC-'):
-            return "%03s%03s%03s000" % (a[1],a[2],a[0])
-        return "%03s%03s%03s%03s" % (a[1],a[2],a[0],a[3])
+    def _make_sort_key(self,entityIndexAid):
+        """
+        Return a string to sort on. We generally want the first element placed last to
+        prioritize the shelf and slot numbers (the second two fields) rather than the
+        component type.
+
+        Examples:
+          'MOD-1-7'         -> '001007MOD'
+          'VCH-1-7-C1'      -> '001007C1VCH'
+          'VCH-1-7-N-19200' -> '001007N-19200VCH'
+        """
+        parts = entityIndexAid.split('-', 3)
+
+        if len(parts) < 3:
+            return ''
+
+        type = parts[0]
+        shelf_slot = parts[1].zfill(3) + parts[2].zfill(3)
+        remainder = ''.join(parts[3:])
+
+        return shelf_slot + remainder + type

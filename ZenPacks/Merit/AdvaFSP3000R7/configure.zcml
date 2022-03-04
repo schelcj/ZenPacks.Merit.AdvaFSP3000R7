@@ -131,6 +131,19 @@
             class="Products.ZenUI3.browser.javascript.JavaScriptSrcBundleViewlet"
             permission="zope2.Public" />
 
+        <!-- 9ROADM Virtual Channels -->
+        <adapter
+            factory=".info.VCHInfo"
+            for=".FSP3000R7Vch.FSP3000R7Vch"
+            provides=".interfaces.IVCHInfo" />
+        <browser:viewlet
+            name="js-AdvaFSP3000R79RoadVch"
+            paths="/++resource++AdvaFSP3000R7/fsp3000r7Vch.js"
+            weight="14"
+            manager="Products.ZenUI3.browser.interfaces.IJavaScriptSrcManager"
+            class="Products.ZenUI3.browser.javascript.JavaScriptSrcBundleViewlet"
+            permission="zope2.Public" />
+
         <!-- 100Gig Muxsponder OTUs -->
         <adapter
             factory=".info.OTU100GInfo"
