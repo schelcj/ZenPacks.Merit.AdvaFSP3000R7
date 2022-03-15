@@ -18,6 +18,7 @@ FSP3000R7VchMib maps Virtual Channels on a FSP3000R7 system
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibCommon import FSP3000R7MibCommon
 from Products.DataCollector.plugins.CollectorPlugin import GetMap
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibPickle import getCache
+from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import AdminState
 
 
 class FSP3000R7VchMib(FSP3000R7MibCommon):
@@ -53,6 +54,10 @@ class FSP3000R7VchMib(FSP3000R7MibCommon):
         for index, attrs in facilityTable.items():
             aid_string = attrs.get('entityFacilityAidString', '')
 
+            if not self._is_admin_in_service(attrs.get('virtualPortAdmin')):
+                log.info('Skipping out-of-service component %s ', aid_string)
+                continue
+
             om = self.objectMap()
             om.EntityIndex = index
             om.interfaceConfigId = attrs.get('virtualPortAlias', '')
@@ -67,3 +72,10 @@ class FSP3000R7VchMib(FSP3000R7MibCommon):
             rm.append(om)
 
         return rm
+
+    def _is_admin_in_service(self, adminState=None):
+        """Compare status code with AdminState mappings"""
+        if adminState in [AdminState.IN_SERVICE, AdminState.AUTO_IN_SERVICE]:
+            return True
+
+        return False
