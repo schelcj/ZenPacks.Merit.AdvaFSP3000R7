@@ -59,6 +59,7 @@ class FSP3000R7DeviceMib(PythonPlugin):
         facilityPhysInstValueInputPowerOID = '1.3.6.1.4.1.2544.1.11.11.7.2.1.1.1.2'
         entityFacilityAidStringOID = '1.3.6.1.4.1.2544.1.11.7.2.7.1.6'
         virtualPortAliasOID = '1.3.6.1.4.1.2544.1.11.7.3.4.2.1.4'
+        virtualPortAdminOID = '1.3.6.1.4.1.2544.1.11.7.3.4.2.1.9'
 
         getdata = {}
         
@@ -129,6 +130,15 @@ class FSP3000R7DeviceMib(PythonPlugin):
         self.__make_cacheable(virtualPortAliasOID,
                               'virtualPortAlias',
                               raw_virtualPortAlias,
+                              facilityTable)
+        log.debug('facilityTable: %s' % pformat(facilityTable))
+
+        raw_virtualPortAdmin = {}
+        raw_virtualPortAdmin = self.__snmpgettable(device,
+                                                       virtualPortAdminOID)
+        self.__make_cacheable(virtualPortAdminOID,
+                              'virtualPortAdmin',
+                              raw_virtualPortAdmin,
                               facilityTable)
         log.debug('facilityTable: %s' % pformat(facilityTable))
 
