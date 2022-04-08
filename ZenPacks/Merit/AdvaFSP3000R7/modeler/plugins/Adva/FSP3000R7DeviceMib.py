@@ -176,14 +176,17 @@ class FSP3000R7DeviceMib(PythonPlugin):
         log.debug('opticalIfDiagTable: %s' % pformat(opticalIfDiagTable))
 
         cache_file_name = '/tmp/%s.Adva_inventory_SNMP.pickle' % device.id
+        cache_data = {
+            'inventoryTable': inventoryTable,
+            'entityTable': entityTable,
+            'opticalIfDiagTable': opticalIfDiagTable,
+            'facilityTable': facilityTable,
+            'facilityPhysInstValueTable': facilityPhysInstValueTable,
+            'time': time.time(),
+        }
         try:
             cache_file = open(cache_file_name,'w')
-            cPickle.dump(inventoryTable,cache_file)
-            cPickle.dump(entityTable,cache_file)
-            cPickle.dump(opticalIfDiagTable,cache_file)
-            cPickle.dump(facilityTable,cache_file)
-            cPickle.dump(facilityPhysInstValueTable,cache_file)
-            cPickle.dump(time.time(),cache_file)
+            cPickle.dump(cache_data, cache_file)
             cache_file.close()
         except IOError,cPickle.PickleError:
             log.warn("Couldn't cache SNMP data in", cache_file_name)

@@ -3,68 +3,47 @@ import time
 from pprint import pformat
 
 def getCache (deviceId, modelerName, log):
+    cache = {}
     cache_file_name = '/tmp/%s.Adva_inventory_SNMP.pickle' % deviceId
-
-    inventoryTable = entityTable = opticalIfDiagTable = facilityTable = facilityPhysInstValueTable = False
     cache_file_time = 0
-
-    bad_cache = 0
 
     try:
         cache_file = open(cache_file_name, 'r')
-        inventoryTable = cPickle.load(cache_file)
-        entityTable = cPickle.load(cache_file)
-        opticalIfDiagTable = cPickle.load(cache_file)
-        facilityTable = cPickle.load(cache_file)
-        facilityPhysInstValueTable = cPickle.load(cache_file)
-        cache_file_time = cPickle.load(cache_file)
+        cache = cPickle.load(cache_file)
         cache_file.close()
     except IOError,cPickle.PickleError:
-        log.info('Could not open or read %s', cache_file_name)
-        bad_cache = 1
+        log.error('Could not open or read %s', cache_file_name)
+        return False
 
-    if bad_cache or cache_file_time < time.time() - 900:
+    if not cache or cache.get('time', 0) < time.time() - 900:
         log.warn("Cached SNMP doesn't exist or is older than 15 minutes. You must include the modeler plugin FSP3000R7Device")
-        return False, inventoryTable, entityTable, opticalIfDiagTable, facilityTable, facilityPhysInstValueTable, containsOPRModules
+        return False
 
-    if not inventoryTable:
-        log.warn('No SNMP inventoryTable response from %s %s',
-                 deviceId, modelerName)
-        return False, inventoryTable, entityTable, opticalIfDiagTable, facilityTable, facilityPhysInstValueTable, containsOPRModules
-    if not entityTable:
-        log.warn('No SNMP entityTable response from %s for the %s plugin',
-                 deviceId, modelerName)
-        return False, inventoryTable, entityTable, opticalIfDiagTable, facilityTable, facilityPhysInstValueTable, containsOPRModules
-    else:
-        log.debug('SNMP entityTable and inventoryTable responses received')
+    required_tables = ['inventoryTable', 'entityTable']
+    for table_name in required_tables:
+        if not cache.get(table_name):
+            log.error('No SNMP %s response from %s for the %s plugin', table_name, deviceId, modelerName)
+            return False
+
+    log.debug('SNMP entityTable and inventoryTable responses received')
+
     # not all modules will respond to opticalIfDiagTable so don't return False
-    if not opticalIfDiagTable:
-        log.warn(
-          'No SNMP opticalIfDiagTable response from %s for the %s plugin',
-          deviceId, modelerName)
-    else:
-        log.debug(
-            'SNMP opticalIfDiagTable and inventoryTable responses received')
-
-    if not facilityPhysInstValueTable:
-        log.warn(
-          'No SNMP facilityPhysInstValueTable response from %s for the %s plugin',
-          deviceId, modelerName)
-    else:
-        log.debug(
-            'SNMP facilityPhysInstValueTable response received')
-
+    optional_tables = ['opticalIfDiagTable', 'facilityPhysInstValueTable']
+    for table_name in optional_tables:
+        if not cache.get(table_name):
+            log.warn('No SNMP %s response from %s for the %s plugin', table_name, deviceId, modelerName)
+        else:
+            log.debug('SNMP %s response received', table_name)
 
     # dictionary of lists of what modules or submodules contain
     # submodules that respond to OPR
-    containsOPRModules = {}
-    if opticalIfDiagTable:
-        containsOPRModules = _build_opr_tree(entityTable, opticalIfDiagTable, log)
+    if cache['opticalIfDiagTable']:
+        containsOPRModules = _build_opr_tree(cache['entityTable'], cache['opticalIfDiagTable'], log)
 
-    if facilityPhysInstValueTable:
+    if cache['facilityPhysInstValueTable']:
         vchOPRModules = _build_opr_tree(
-            facilityTable,
-            facilityPhysInstValueTable,
+            cache['facilityTable'],
+            cache['facilityPhysInstValueTable'],
             log,
             aid_field='entityFacilityAidString',
             power_field='facilityPhysInstValueInputPower',
@@ -72,7 +51,9 @@ def getCache (deviceId, modelerName, log):
         )
         containsOPRModules.update(vchOPRModules)
 
-    return True, inventoryTable, entityTable, opticalIfDiagTable, facilityTable, facilityPhysInstValueTable, containsOPRModules
+    cache['containsOPRModules'] = containsOPRModules
+
+    return cache
 
 
 def _build_opr_tree(

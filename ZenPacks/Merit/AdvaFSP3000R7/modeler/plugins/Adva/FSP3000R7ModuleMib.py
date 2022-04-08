@@ -38,23 +38,20 @@ class FSP3000R7ModuleMib(SnmpPlugin):
         if not getdata['setHWTag']:
             log.info("Couldn't get system name from Adva shelf.")
 
-        inventoryTable = entityTable = opticalIfDiagTable = False
-        containsModules = {}
-        gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
-            facilityTable, facilityPhysInstValueTable, containsModules = getCache(device.id, self.name(), log)
-        if not gotCache:
-            log.debug('Could not get cache for %s' % self.name())
+        cache = getCache(device.id, self.name(), log)
+        if not cache:
+            log.error('Could not get cache for %s' % self.name())
             return
 
         # relationship mapping
         rm = self.relMap()
 
         # pick up MOD-* containers from entityTable
-        for entityIndex, attributes in entityTable.items():
+        for entityIndex, attributes in cache['entityTable'].items():
             # Power Supply, NCU and Fan models are already top level containers
-            if entityIndex not in inventoryTable:
+            if entityIndex not in cache['inventoryTable']:
                 continue
-            inventoryUnitName = inventoryTable[entityIndex]['inventoryUnitName']
+            inventoryUnitName = cache['inventoryTable'][entityIndex]['inventoryUnitName']
             if inventoryUnitName in FanorNCUorPSModels:
                 continue
 

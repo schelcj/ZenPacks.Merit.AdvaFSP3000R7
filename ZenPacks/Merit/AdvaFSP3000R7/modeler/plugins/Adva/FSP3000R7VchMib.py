@@ -42,16 +42,15 @@ class FSP3000R7VchMib(FSP3000R7MibCommon):
         if not getdata['setHWTag']:
             log.info("Couldn't get system name from Adva shelf.")
 
-        gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
-            facilityTable, facilityPhysInstValueTable, containsOPRModules = getCache(device.id, self.name(), log)
-        if not gotCache:
-            log.debug('Could not get cache for %s' % self.name())
+        cache = getCache(device.id, self.name(), log)
+        if not cache:
+            log.error('Could not get cache for %s' % self.name())
             return
 
         # relationship mapping
         rm = self.relMap()
 
-        for index, attrs in facilityTable.items():
+        for index, attrs in cache['facilityTable'].items():
             aid_string = attrs.get('entityFacilityAidString', '')
 
             if not self._is_admin_in_service(attrs.get('virtualPortAdmin')):
