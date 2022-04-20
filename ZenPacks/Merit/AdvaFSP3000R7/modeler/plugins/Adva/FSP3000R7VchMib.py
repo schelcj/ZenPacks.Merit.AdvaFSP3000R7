@@ -35,6 +35,7 @@ class FSP3000R7VchMib(FSP3000R7MibCommon):
     # to detect channels on specific (newer) models.
     allowed_unit_names = [
         '9ROADM-RS',
+        'MA-B5LT',
     ]
 
     def process(self, device, results, log):
