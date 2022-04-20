@@ -268,7 +268,7 @@ class FSP3000R7DeviceMib(PythonPlugin):
                         chain=chain,
                    )
                 except KeyError as err:
-                    log.warning('%s: %s', err.__class__.__name__, err)
+                    log.warning('%s: %s, no further ParentIds to follow with chain %s' % (err.__class__.__name__, err, chain))
                     continue
 
         log.warning("Unable to find UnitName for entity with chain %s" % chain)
