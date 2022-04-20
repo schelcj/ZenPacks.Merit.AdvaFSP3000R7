@@ -30,6 +30,13 @@ class FSP3000R7VchMib(FSP3000R7MibCommon):
     # Have to get something with SNMP or modeler won't process
     snmpGetMap = GetMap({'.1.3.6.1.4.1.2544.1.11.2.2.1.1.0' : 'setHWTag'})
 
+    # Since Virtual Channels on older cards might already by detected by other
+    # plugins (like FSP3000R7Transponder, FSP3000R7Roadm), only allow this plugin
+    # to detect channels on specific (newer) models.
+    allowed_unit_names = [
+        '9ROADM-RS',
+    ]
+
     def process(self, device, results, log):
         """process snmp information for components from this device"""
         log.info('processing %s for device %s', self.name(), device.id)
@@ -52,15 +59,29 @@ class FSP3000R7VchMib(FSP3000R7MibCommon):
 
         for index, attrs in cache['facilityTable'].items():
             aid_string = attrs.get('entityFacilityAidString', '')
+            unit_name = attrs.get('inventoryUnitName', '')
+            virtual_port_alias = attrs.get('virtualPortAlias', '')
 
             if not self._is_admin_in_service(attrs.get('virtualPortAdmin')):
-                log.info('Skipping out-of-service component %s ', aid_string)
+                log.info('Skipping out-of-service component %s ' % aid_string)
+                continue
+
+            if unit_name not in self.allowed_unit_names:
+                log.info(
+                    'Skipping component %s from model %s since it is not contained in any of: %s, full attrs are %s' % (
+                        aid_string,
+                        unit_name,
+                        self.allowed_unit_names,
+                        attrs,
+                    )
+                )
                 continue
 
             om = self.objectMap()
             om.EntityIndex = index
-            om.interfaceConfigId = attrs.get('virtualPortAlias', '')
+            om.interfaceConfigId = virtual_port_alias
             om.entityIndexAid = aid_string
+            om.inventoryUnitName = unit_name
             sort_key = self._make_sort_key(aid_string)
             om.sortKey = sort_key
             om.id = self.prepId(aid_string)
