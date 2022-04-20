@@ -80,11 +80,10 @@ class FSP3000R7VchMib(FSP3000R7MibCommon):
 
             if unit_name not in self.allowed_unit_names:
                 log.info(
-                    'Skipping component %s from model %s since it is not contained in any of: %s, full attrs are %s' % (
+                    'Skipping component %s from model %s since it is not contained in any of %s' % (
                         aid_string,
                         unit_name,
                         self.allowed_unit_names,
-                        attrs,
                     )
                 )
                 continue
