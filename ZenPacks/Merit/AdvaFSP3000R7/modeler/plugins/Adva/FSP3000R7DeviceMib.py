@@ -247,7 +247,7 @@ class FSP3000R7DeviceMib(PythonPlugin):
 
         for table_prefix, table_attrs in entity_tables.items():
             for entity_index, entity_attrs in table_attrs['table_data'].items():
-                full_aid_oid = ".".join([table_attrs['base_oids']['AidString'],  entity_index])
+                full_aid_oid = ".".join([table_attrs['base_oids']['AidString'], entity_index])
                 if full_aid_oid != current_oid:
                     continue
 

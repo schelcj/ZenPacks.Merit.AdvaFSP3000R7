@@ -19,6 +19,7 @@ from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibCommon import FSP3000R7MibComm
 from Products.DataCollector.plugins.CollectorPlugin import GetMap
 from ZenPacks.Merit.AdvaFSP3000R7.lib.FSP3000R7MibPickle import getCache
 from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import AdminState
+from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import EntityClass
 
 
 class FSP3000R7VchMib(FSP3000R7MibCommon):
@@ -36,6 +37,11 @@ class FSP3000R7VchMib(FSP3000R7MibCommon):
     allowed_unit_names = [
         '9ROADM-RS',
         'MA-B5LT',
+    ]
+
+    allowed_entity_classes = [
+        EntityClass.VIRTUAL_CHANNEL,
+        EntityClass.VIRTUAL_CHANNEL_N,
     ]
 
     def process(self, device, results, log):
@@ -61,7 +67,12 @@ class FSP3000R7VchMib(FSP3000R7MibCommon):
         for index, attrs in cache['facilityTable'].items():
             aid_string = attrs.get('entityFacilityAidString', '')
             unit_name = attrs.get('inventoryUnitName', '')
+            facility_class = attrs.get('entityFacilityClass', '')
             virtual_port_alias = attrs.get('virtualPortAlias', '')
+
+            if facility_class not in self.allowed_entity_classes:
+                log.info('Skipping non-virtual component %s' % aid_string)
+                continue
 
             if not self._is_admin_in_service(attrs.get('virtualPortAdmin')):
                 log.info('Skipping out-of-service component %s ' % aid_string)
