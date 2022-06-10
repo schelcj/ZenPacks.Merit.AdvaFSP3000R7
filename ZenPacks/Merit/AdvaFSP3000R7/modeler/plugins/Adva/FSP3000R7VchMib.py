@@ -35,6 +35,7 @@ class FSP3000R7VchMib(FSP3000R7MibCommon):
     # plugins (like FSP3000R7Transponder, FSP3000R7Roadm), only allow this plugin
     # to detect channels on specific (newer) models.
     allowed_unit_names = [
+        '4ROADM-C96/0/OPM',
         '9ROADM-RS',
         'MA-B5LT',
     ]
