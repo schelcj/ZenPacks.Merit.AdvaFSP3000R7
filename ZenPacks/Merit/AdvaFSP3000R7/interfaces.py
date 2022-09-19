@@ -87,8 +87,9 @@ class INCUInfo(IComponentInfo):
 
 class IVCHInfo(IComponentInfo):
     """ Info adapter for VCH component """
-    # Don't need to show any instance data
-    pass
+    inventoryUnitName = schema.Text(title    = u"Model",
+                                    readonly = True,
+                                    group    = 'Details')
 
 class IFanInfo(IComponentInfo):
     """ Info adapter for Fan NCU component """
