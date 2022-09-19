@@ -44,28 +44,25 @@ class FSP3000R7MibCommon(SnmpPlugin):
         if not getdata['setHWTag']:
             log.info("Couldn't get system name from Adva shelf.")
 
-        inventoryTable = entityTable = opticalIfDiagTable = False
-        containsOPRModules = {}
-        gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
-            facilityTable, facilityPhysInstValueTable, containsOPRModules = getCache(device.id, self.name(), log)
-        if not gotCache:
+        cache = getCache(device.id, self.name(), log)
+        if not cache:
             log.debug('Could not get cache for %s' % self.name())
             return
 
         # relationship mapping
         rm = self.relMap()
 
-        for entityIndex, inventoryUnitName in inventoryTable.items():
+        for entityIndex, inventoryUnitName in cache['inventoryTable'].items():
             entityIndex_str = str(entityIndex)
             invName = inventoryUnitName['inventoryUnitName']
-            modName = entityTable[entityIndex]['entityIndexAid']
+            modName = cache['entityTable'][entityIndex]['entityIndexAid']
             # if model name matches, assigned and equiped:
             if self._model_match(invName, self.componentModels) \
-              and entityIndex in entityTable \
-              and 'entityAssignmentState' in entityTable[entityIndex] \
-              and 'entityEquipmentState' in entityTable[entityIndex] \
-              and entityTable[entityIndex]['entityAssignmentState'] == AssignmentState.ASSIGNED \
-              and entityTable[entityIndex]['entityEquipmentState'] == EquipmentState.EQUIPPED:
+              and entityIndex in cache['entityTable'] \
+              and 'entityAssignmentState' in cache['entityTable'][entityIndex] \
+              and 'entityEquipmentState' in cache['entityTable'][entityIndex] \
+              and cache['entityTable'][entityIndex]['entityAssignmentState'] == AssignmentState.ASSIGNED \
+              and cache['entityTable'][entityIndex]['entityEquipmentState'] == EquipmentState.EQUIPPED:
                 # only add MOD name if power supply, fan or NCU
                 if self.__class__.__name__ in ['FSP3000R7PowerSupplyMib',
                                                'FSP3000R7FanMib',
@@ -74,13 +71,13 @@ class FSP3000R7MibCommon(SnmpPlugin):
                   om.EntityIndex = int(entityIndex)
                   om.inventoryUnitName = invName
                   # Add comment (e.g. 'RAMAN from Niles') if one exists
-                  if 'interfaceConfigIdentifier' in entityTable[entityIndex]:
+                  if 'interfaceConfigIdentifier' in cache['entityTable'][entityIndex]:
                       om.interfaceConfigId = \
-                          entityTable[entityIndex]['interfaceConfigIdentifier']
+                          cache['entityTable'][entityIndex]['interfaceConfigIdentifier']
                   om.entityIndexAid = modName
                   om.sortKey = self._make_sort_key(modName)
                   om.entityAssignmentState = \
-                      entityTable[entityIndex]['entityAssignmentState']
+                      cache['entityTable'][entityIndex]['entityAssignmentState']
                   om.id = self.prepId(modName)
                   om.title = modName 
                   om.snmpindex = int(entityIndex)
@@ -90,19 +87,19 @@ class FSP3000R7MibCommon(SnmpPlugin):
                   rm.append(om)
 
                 # Now find sub-organizers that respond to OPR
-                if modName not in containsOPRModules:
+                if modName not in cache['containsOPRModules']:
                     continue
-                for entityIndex in containsOPRModules[modName]:
+                for entityIndex in cache['containsOPRModules'][modName]:
                     # skip non-production components
                     entity_assigned = (
-                        entityIndex in entityTable
-                        and entityTable[entityIndex].get('entityAssignmentState') == AssignmentState.ASSIGNED
+                        entityIndex in cache['entityTable']
+                        and cache['entityTable'][entityIndex].get('entityAssignmentState') == AssignmentState.ASSIGNED
                     )
 
                     # Sub-organizers with EquipmentState.UNDEFINED or no equipment state should be considered valid
                     entity_equipped = (
-                        entityIndex in entityTable
-                        and entityTable[entityIndex].get('entityEquipmentState') in (
+                        entityIndex in cache['entityTable']
+                        and cache['entityTable'][entityIndex].get('entityEquipmentState') in (
                             None,
                             EquipmentState.UNDEFINED,
                             EquipmentState.EQUIPPED,
@@ -115,13 +112,13 @@ class FSP3000R7MibCommon(SnmpPlugin):
                     om = self.objectMap()
                     om.EntityIndex = int(entityIndex)
                     om.inventoryUnitName = invName
-                    if 'interfaceConfigIdentifier' in entityTable[entityIndex]:
+                    if 'interfaceConfigIdentifier' in cache['entityTable'][entityIndex]:
                         om.interfaceConfigId = \
-                           entityTable[entityIndex]['interfaceConfigIdentifier']
-                    om.entityIndexAid=entityTable[entityIndex]['entityIndexAid']
+                           cache['entityTable'][entityIndex]['interfaceConfigIdentifier']
+                    om.entityIndexAid = cache['entityTable'][entityIndex]['entityIndexAid']
                     om.sortKey = self._make_sort_key(om.entityIndexAid)
                     om.entityAssignmentState = \
-                        entityTable[entityIndex]['entityAssignmentState']
+                        cache['entityTable'][entityIndex]['entityAssignmentState']
                     om.id = self.prepId(om.entityIndexAid)
                     om.title = om.entityIndexAid
                     om.snmpindex = int(entityIndex)

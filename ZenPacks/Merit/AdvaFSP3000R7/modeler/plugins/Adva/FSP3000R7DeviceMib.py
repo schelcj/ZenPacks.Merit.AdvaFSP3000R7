@@ -24,6 +24,7 @@ import cPickle
 import time
 import subprocess
 from pprint import pformat
+from ZenPacks.Merit.AdvaFSP3000R7.lib.AdvaMibTypes import EntityClass
 
 
 class FSP3000R7DeviceMib(PythonPlugin):
@@ -57,9 +58,59 @@ class FSP3000R7DeviceMib(PythonPlugin):
 
         # 9ROADM Virtual Channels are in a separate SNMP location with alternate indexes
         facilityPhysInstValueInputPowerOID = '1.3.6.1.4.1.2544.1.11.11.7.2.1.1.1.2'
-        entityFacilityAidStringOID = '1.3.6.1.4.1.2544.1.11.7.2.7.1.6'
         virtualPortAliasOID = '1.3.6.1.4.1.2544.1.11.7.3.4.2.1.4'
         virtualPortAdminOID = '1.3.6.1.4.1.2544.1.11.7.3.4.2.1.9'
+
+        # Build/flatten a parent tree to filter entities (i.e., VCHs for '9ROADM-RS')
+        entity_tables = {
+            'entityFacility': {
+                'base_oids': {
+                    'AidString': '1.3.6.1.4.1.2544.1.11.7.2.7.1.6',
+                    'Class': '1.3.6.1.4.1.2544.1.11.7.2.7.1.10',
+                    'ParentId': '1.3.6.1.4.1.2544.1.11.7.2.7.1.9',
+                },
+                'table_data': {},
+            },
+            'entityOpticalMux': {
+                'base_oids': {
+                    'AidString': '1.3.6.1.4.1.2544.1.11.7.2.17.1.6',
+                    'Class': '1.3.6.1.4.1.2544.1.11.7.2.17.1.10',
+                    'ParentId': '1.3.6.1.4.1.2544.1.11.7.2.17.1.9',
+                },
+                'table_data': {},
+            },
+            'entityEqpt': {
+                'base_oids': {
+                    'AidString': '1.3.6.1.4.1.2544.1.11.7.2.2.1.6',
+                    'Class': '1.3.6.1.4.1.2544.1.11.7.2.2.1.10',
+                    'ParentId': '1.3.6.1.4.1.2544.1.11.7.2.2.1.9',
+                 },
+                'table_data': {},
+            },
+            'advaInventory': {
+                'base_oids': {
+                    'AidString': '1.3.6.1.4.1.2544.1.11.7.10.1.1.6',
+                    'Class': '1.3.6.1.4.1.2544.1.11.7.10.1.1.19',
+                    'UnitName': '1.3.6.1.4.1.2544.1.11.7.10.1.1.7',
+                 },
+                'table_data': {},
+            },
+        }
+
+        for key, info in entity_tables.items():
+            for base_oid_name, base_oid in info['base_oids'].items():
+                raw_data = self.__snmpgettable(device, base_oid)
+                self.__make_cacheable(
+                    base_oid,
+                    key + base_oid_name,
+                    raw_data,
+                    info['table_data'],
+                )
+
+        # Attach the containing module's UnitName directly to lower-level entities
+        for facility_index, facility_info in entity_tables['entityFacility']['table_data'].items():
+            unit_name = self.__get_unit_name(facility_info['entityFacilityParentId'], entity_tables, log)
+            facility_info['inventoryUnitName'] = unit_name
 
         getdata = {}
         
@@ -72,7 +123,6 @@ class FSP3000R7DeviceMib(PythonPlugin):
         raw_inventory = {}
         raw_inventory = self.__snmpgettable(device,inventoryUnitNameOID)
         self.__make_cacheable(inventoryUnitNameOID, 'inventoryUnitName', raw_inventory, inventoryTable)
-        log.debug('inventoryTable: %s' % pformat(inventoryTable))
 
         entityTable = {}
         raw_entityContainedIn = {}
@@ -112,35 +162,18 @@ class FSP3000R7DeviceMib(PythonPlugin):
                               'entityEquipmentState',
                               raw_entityEquipmentState,
                               entityTable)
-        log.debug('entityTable: %s' % pformat(entityTable))
 
-        facilityTable = {}
-        raw_entityFacilityAidString = {}
-        raw_entityFacilityAidString = self.__snmpgettable(device,
-                                                       entityFacilityAidStringOID)
-        self.__make_cacheable(entityFacilityAidStringOID,
-                              'entityFacilityAidString',
-                              raw_entityFacilityAidString,
-                              facilityTable)
-        log.debug('facilityTable: %s' % pformat(facilityTable))
-
-        raw_virtualPortAlias = {}
-        raw_virtualPortAlias = self.__snmpgettable(device,
-                                                       virtualPortAliasOID)
+        raw_virtualPortAlias = self.__snmpgettable(device, virtualPortAliasOID)
         self.__make_cacheable(virtualPortAliasOID,
                               'virtualPortAlias',
                               raw_virtualPortAlias,
-                              facilityTable)
-        log.debug('facilityTable: %s' % pformat(facilityTable))
+                              entity_tables['entityFacility']['table_data'])
 
-        raw_virtualPortAdmin = {}
-        raw_virtualPortAdmin = self.__snmpgettable(device,
-                                                       virtualPortAdminOID)
+        raw_virtualPortAdmin = self.__snmpgettable(device, virtualPortAdminOID)
         self.__make_cacheable(virtualPortAdminOID,
                               'virtualPortAdmin',
                               raw_virtualPortAdmin,
-                              facilityTable)
-        log.debug('facilityTable: %s' % pformat(facilityTable))
+                              entity_tables['entityFacility']['table_data'])
 
         opticalIfDiagTable = {}
         raw_opticalIfDiagInputPower = {}
@@ -173,22 +206,73 @@ class FSP3000R7DeviceMib(PythonPlugin):
                             { 'opticalIfDiagInputPower' : int(w['opr']) }
             except (KeyError, ValueError):
                 pass
-        log.debug('opticalIfDiagTable: %s' % pformat(opticalIfDiagTable))
 
         cache_file_name = '/tmp/%s.Adva_inventory_SNMP.pickle' % device.id
+        cache_data = {
+            'inventoryTable': inventoryTable,
+            'entityTable': entityTable,
+            'opticalIfDiagTable': opticalIfDiagTable,
+            'facilityTable': entity_tables['entityFacility']['table_data'],
+            'facilityPhysInstValueTable': facilityPhysInstValueTable,
+            'time': time.time(),
+        }
         try:
             cache_file = open(cache_file_name,'w')
-            cPickle.dump(inventoryTable,cache_file)
-            cPickle.dump(entityTable,cache_file)
-            cPickle.dump(opticalIfDiagTable,cache_file)
-            cPickle.dump(facilityTable,cache_file)
-            cPickle.dump(facilityPhysInstValueTable,cache_file)
-            cPickle.dump(time.time(),cache_file)
+            cPickle.dump(cache_data, cache_file)
             cache_file.close()
         except IOError,cPickle.PickleError:
             log.warn("Couldn't cache SNMP data in", cache_file_name)
 
         return getdata
+
+
+    def __get_unit_name(self, start_oid, entity_tables, log, current_oid=None, chain=None):
+        """
+        Traverse the ParentId data, returning the inventoryUnitName associated with
+        the first module-level entity in the entityEqpt table.
+
+        For troubleshooting purposes, build a chain (list) of the OIDs from child->parent.
+        """
+        unit_name = None
+
+        if current_oid is None:
+            current_oid = start_oid
+
+        if chain is None:
+            chain = []
+
+        current_oid = current_oid.lstrip('.')
+
+        chain.append(current_oid)
+
+        for table_prefix, table_attrs in entity_tables.items():
+            for entity_index, entity_attrs in table_attrs['table_data'].items():
+                full_aid_oid = ".".join([table_attrs['base_oids']['AidString'], entity_index])
+                if full_aid_oid != current_oid:
+                    continue
+
+                if entity_attrs.get('entityEqptClass') == EntityClass.MODULE:
+                    try:
+                        unit_name = entity_tables['advaInventory']['table_data'][entity_index]['advaInventoryUnitName']
+                        return unit_name
+                    except KeyError as err:
+                        log.warning('%s: %s, unable to find UnitName for entity with chain %s' % (err.__class__.__name__, err, chain))
+
+                try:
+                    next_parent = entity_attrs[table_prefix + 'ParentId']
+                    return self.__get_unit_name(
+                        start_oid=start_oid,
+                        entity_tables=entity_tables,
+                        log=log,
+                        current_oid=next_parent,
+                        chain=chain,
+                   )
+                except KeyError as err:
+                    log.warning('%s: %s, no further ParentIds to follow with chain %s' % (err.__class__.__name__, err, chain))
+                    continue
+
+        log.warning("Unable to find UnitName for entity with chain %s" % chain)
+        return None
 
 
     def process(self, device, results, log):
@@ -210,28 +294,43 @@ class FSP3000R7DeviceMib(PythonPlugin):
             results[oid_name] = ''
 
 
-    def __snmpgettable(self,device,oid):
-        """Use snmpbulkwalk to get data.  Use timeout of 5 seconds since
-           shelves can be very slow to respond"""
+    def __snmpgettable(self, device, oid, not_found_prefix='no such instance'):
+        """
+        Use snmpbulkwalk to get data.  Use timeout of 5 seconds since
+        shelves can be very slow to respond.
+
+        If the value of the first result starts with not_found_prefix,
+        return an empty dict.
+        """
         cmd = ['snmpbulkwalk','-v2c','-t','5',
                '-c',device.zSnmpCommunity, '-Onq', device.manageIp,oid]
+
         results = {}
+
         try:
             walk_output = subprocess.check_output(cmd).split('\n')
+
             for line in walk_output:
                 try:
                     oid,val = line.split(' ',1)
                     oid = oid.lstrip('.')
                     val = val.strip('"')
+
+                    if not len(results) and val.lower().startswith(not_found_prefix):
+                        return results
+
                 except ValueError:
                     continue
+
                 try:
                     val = int(val)
                 except ValueError:
                     pass
+
                 results[oid] = val
         except subprocess.CalledProcessError, IndexError:
             pass
+
         return results
 
     def __make_cacheable(self, base_oid, name, raw, results):

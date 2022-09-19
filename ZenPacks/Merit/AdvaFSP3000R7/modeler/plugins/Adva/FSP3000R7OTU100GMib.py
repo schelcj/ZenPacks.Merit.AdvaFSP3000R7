@@ -54,28 +54,25 @@ class FSP3000R7OTU100GMib(SnmpPlugin):
         getdata, tabledata = results
 
         # cached data from device modeler
-        inventoryTable = entityTable = opticalIfDiagTable = False
-        containsOPRModules = {}
-        gotCache, inventoryTable, entityTable, opticalIfDiagTable, \
-            facilityTable, facilityPhysInstValueTable, containsOPRModules = getCache(device.id, self.name(), log)
-        if not gotCache:
-            log.debug('Could not get cache for %s' % self.name())
+        cache = getCache(device.id, self.name(), log)
+        if not cache:
+            log.error('Could not get cache for %s' % self.name())
             return
 
         # relationship mapping
         rm = self.relMap()
 
         # look for blades containing 100G Muxponder in inventory table
-        for bladeEntityIndex in inventoryTable:
-            bladeInv = inventoryTable[bladeEntityIndex]['inventoryUnitName']
-            bladeIndexAid = entityTable[bladeEntityIndex]['entityIndexAid']
+        for bladeEntityIndex in cache['inventoryTable']:
+            bladeInv = cache['inventoryTable'][bladeEntityIndex]['inventoryUnitName']
+            bladeIndexAid = cache['entityTable'][bladeEntityIndex]['entityIndexAid']
             if not bladeInv in componentModels:
                 continue
 
             log.info('found 100G Muxponder OTU matching model %s in module %s', bladeInv, bladeIndexAid)
     
             # find ports from entityContainedIn for 100G OTU entityIndex
-            ports = self.__findPorts(log,bladeEntityIndex,entityTable)
+            ports = self.__findPorts(log, bladeEntityIndex, cache['entityTable'])
 
             if not ports:
                 continue
@@ -84,10 +81,10 @@ class FSP3000R7OTU100GMib(SnmpPlugin):
                 om = self.objectMap()
                 om.EntityIndex = int(portEntityIndex)
                 om.inventoryUnitName = bladeInv
-                if 'interfaceConfigIdentifier' in entityTable[portEntityIndex]:
-                    om.interfaceConfigId = entityTable[portEntityIndex]['interfaceConfigIdentifier']
-                om.entityIndexAid=entityTable[portEntityIndex]['entityIndexAid']
-                om.entityAssignmentState = entityTable[portEntityIndex]['entityAssignmentState']
+                if 'interfaceConfigIdentifier' in cache['entityTable'][portEntityIndex]:
+                    om.interfaceConfigId = cache['entityTable'][portEntityIndex]['interfaceConfigIdentifier']
+                om.entityIndexAid = cache['entityTable'][portEntityIndex]['entityIndexAid']
+                om.entityAssignmentState = cache['entityTable'][portEntityIndex]['entityAssignmentState']
                 om.id = self.prepId(om.entityIndexAid)
                 om.title = om.entityIndexAid
                 om.snmpindex = int(portEntityIndex)
