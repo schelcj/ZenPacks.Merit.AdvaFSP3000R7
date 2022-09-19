@@ -30,4 +30,6 @@ class FSP3000R7RoadmMib(FSP3000R7MibCommon):
                         '4ROADM-C96/0/OPM',
                         'CCM-C40/8',
                         'CCM-C80/8',
-                        '4-OPCM' ]
+                        '4-OPCM',
+                        'MA-B5LT',
+                        ]
