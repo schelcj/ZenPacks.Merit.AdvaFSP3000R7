@@ -61,6 +61,11 @@ class TransponderInfo(ComponentInfo):
     inventoryUnitName = ProxyProperty("inventoryUnitName")
     interfaceConfigId = ProxyProperty("interfaceConfigId")
 
+class TransponderVCHInfo(ComponentInfo):
+    implements(interfaces.ITransponderVCHInfo)
+    inventoryUnitName = ProxyProperty("inventoryUnitName")
+    interfaceConfigId = ProxyProperty("interfaceConfigId")
+
 class OTU100GInfo(ComponentInfo):
     implements(interfaces.IOTU100GInfo)
     inventoryUnitName = ProxyProperty("inventoryUnitName")

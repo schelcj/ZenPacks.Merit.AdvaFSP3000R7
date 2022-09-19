@@ -20,4 +20,5 @@ productNames = ('FSP3000R7Device',
                 'FSP3000R7RamanUPort',
                 'FSP3000R7Roadm',
                 'FSP3000R7Transponder',
+                'FSP3000R7TransponderVch',
                 'FSP3000R7Vch',)
