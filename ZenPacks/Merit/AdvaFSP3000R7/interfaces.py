@@ -20,84 +20,67 @@ from Products.Zuul.interfaces import IComponentInfo
 from Products.Zuul.form import schema
 from Products.Zuul.utils import ZuulMessageFactory as _t
 
+class IFSP3000R7ComponentInfo(IComponentInfo):
+    """Base class for FSP3000R7 info adpators"""
+    inventoryUnitName = schema.Text(title    = u"Model",
+                                    readonly = True,
+                                    group    = 'Details')
+    snmpindex = schema.Text(title    = u"SNMP Index",
+                            readonly = True,
+                            group    = 'Details')
 
-class IModuleInfo(IComponentInfo):
+class IModuleInfo(IFSP3000R7ComponentInfo):
     """ Info adapter for Module (container) component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
-
-class IOSCInfo(IComponentInfo):
-    """ Info adapter for Optical Service Channel component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
-
-class IPowerSupplyInfo(IComponentInfo):
-    """ Info adapter for Power Supply component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
-
-class IAmplifierInfo(IComponentInfo):
-    """ Info adapter for Amplifier component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
-
-class IRamanNPortInfo(IComponentInfo):
-    """ Info adapter for Raman Amplifier Network Port component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
-
-class IRamanUPortInfo(IComponentInfo):
-    """ Info adapter for Raman Amplifier Upgrade Port component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
-class IRoadmInfo(IComponentInfo):
-    """ Info adapter for ROADM component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
-
-class ITransponderInfo(IComponentInfo):
-    """ Info adapter for Transponder component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
-
-class ITransponderVCHInfo(IComponentInfo):
-    """ Info adapter for Transponder VCH component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
-
-class IOTU100GInfo(IComponentInfo):
-    """ Info adapter for 100G Transponder OTU component."""
-    # Don't need to show any instance data
     pass
 
-class IOptical100GInfo(IComponentInfo):
+class IOSCInfo(IFSP3000R7ComponentInfo):
+    """ Info adapter for Optical Service Channel component """
+    pass
+
+class IPowerSupplyInfo(IFSP3000R7ComponentInfo):
+    """ Info adapter for Power Supply component """
+    pass
+
+class IAmplifierInfo(IFSP3000R7ComponentInfo):
+    """ Info adapter for Amplifier component """
+    pass
+
+class IRamanNPortInfo(IFSP3000R7ComponentInfo):
+    """ Info adapter for Raman Amplifier Network Port component """
+    pass
+
+class IRamanUPortInfo(IFSP3000R7ComponentInfo):
+    """ Info adapter for Raman Amplifier Upgrade Port component """
+    pass
+
+class IRoadmInfo(IFSP3000R7ComponentInfo):
+    """ Info adapter for ROADM component """
+    pass
+
+class ITransponderInfo(IFSP3000R7ComponentInfo):
+    """ Info adapter for Transponder component """
+    pass
+
+class ITransponderVCHInfo(IFSP3000R7ComponentInfo):
+    """ Info adapter for Transponder VCH component """
+    pass
+
+class IOTU100GInfo(IFSP3000R7ComponentInfo):
+    """ Info adapter for 100G Transponder OTU component."""
+    pass
+
+class IOptical100GInfo(IFSP3000R7ComponentInfo):
     """ Info adapter for 100G Transponder Optical component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
+    pass
 
-class INCUInfo(IComponentInfo):
+class INCUInfo(IFSP3000R7ComponentInfo):
     """ Info adapter for NCU component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
+    pass
 
-class IVCHInfo(IComponentInfo):
+class IVCHInfo(IFSP3000R7ComponentInfo):
     """ Info adapter for VCH component """
-    inventoryUnitName = schema.Text(title    = u"Model",
-                                    readonly = True,
-                                    group    = 'Details')
+    pass
 
-class IFanInfo(IComponentInfo):
+class IFanInfo(IFSP3000R7ComponentInfo):
     """ Info adapter for Fan NCU component """
-    # Don't need to show any instance data
     pass
