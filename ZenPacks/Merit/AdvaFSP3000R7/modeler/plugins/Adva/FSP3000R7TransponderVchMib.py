@@ -28,4 +28,5 @@ class FSP3000R7TransponderVchMib(FSP3000R7VchCommon):
     # to detect channels on specific (newer) models.
     allowed_unit_names = [
         '4TCA-PCN-4GU+4G',
+        'MA-B5LT',
     ]

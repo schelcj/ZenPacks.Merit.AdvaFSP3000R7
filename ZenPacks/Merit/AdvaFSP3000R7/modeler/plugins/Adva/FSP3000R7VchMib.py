@@ -28,5 +28,4 @@ class FSP3000R7VchMib(FSP3000R7VchCommon):
     allowed_unit_names = [
         '4ROADM-C96/0/OPM',
         '9ROADM-RS',
-        'MA-B5LT',
     ]
