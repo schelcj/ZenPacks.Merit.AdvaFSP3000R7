@@ -12,4 +12,4 @@ PowerSupplyModels = [ 'PSU/7HU-DC',   'PSU/7HU-AC',   'PSU/7HU-R-DC',
                       'PSU/9HU-DC',   'PSU/9HU-AC',   'PSU/1HU-R-AC',
                       'PSU/7HU-AC-800', 'PSU/7HU-DC-800', 'PSU/7HU-R-DC-HP',
                       'PSU/1HU-R-AC-200', 'PSU/1HU-R-DC-200',
-                      'PSU/X9HU-DC-800', 'PSM-AC4', 'PSM-AC5', 'PSM-DC4' ]
+                      'PSU/X9HU-DC-800', 'PSM-AC3', 'PSM-AC4', 'PSM-AC5', 'PSM-DC4' ]
