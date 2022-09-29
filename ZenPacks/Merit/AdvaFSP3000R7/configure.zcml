@@ -131,7 +131,20 @@
             class="Products.ZenUI3.browser.javascript.JavaScriptSrcBundleViewlet"
             permission="zope2.Public" />
 
-        <!-- 9ROADM Virtual Channels -->
+        <!-- Transponder Virtual Channels -->
+        <adapter
+            factory=".info.TransponderVCHInfo"
+            for=".FSP3000R7TransponderVch.FSP3000R7TransponderVch"
+            provides=".interfaces.ITransponderVCHInfo" />
+        <browser:viewlet
+            name="js-AdvaFSP3000R7TransponderVch"
+            paths="/++resource++AdvaFSP3000R7/fsp3000r7TransponderVch.js"
+            weight="14"
+            manager="Products.ZenUI3.browser.interfaces.IJavaScriptSrcManager"
+            class="Products.ZenUI3.browser.javascript.JavaScriptSrcBundleViewlet"
+            permission="zope2.Public" />
+
+        <!-- ROADM Virtual Channels -->
         <adapter
             factory=".info.VCHInfo"
             for=".FSP3000R7Vch.FSP3000R7Vch"

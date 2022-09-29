@@ -82,4 +82,6 @@ class FSP3000R7TransponderMib(FSP3000R7MibCommon):
                         '10TCE-PCN-16GU+100G',
                         '8TCE-ESCON+2G5-V#',
                         '8TCE-GLINK+2G5-V#',
-                        'MP-2B4CT' ]
+                        'MP-2B4CT',
+                        'MA-B5LT',
+                        ]
